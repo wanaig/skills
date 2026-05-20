@@ -37,6 +37,7 @@
    - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
    - `{PROJECT_ROOT}/outputs/artifacts/` — 可执行制品
 5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
+6. **状态检查**：如 main-log.md 已有内容（断点续传），读取最后 30 行确认当前阶段，跳到对应 Phase 继续；如全新启动，标注 `- {yymmdd hhmm} 状态检查：全新启动`
 
 **日志写入**：
 ```
@@ -127,7 +128,7 @@ Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QP
 
 #### ID 使用规则
 
-1. **resume 用 Task task_id**，必须指定 subagent_type="general"，在 resume 前先 skill(name: "...") 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{FA_ID}"` 格式（Agent Registry JSON 中 `agentId` 字段的值，如 `fa_techstack`），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
 2. **修正环节中复用同一个维度Agent的 ID**，禁止启动新Agent
 3. **修正环节结束后所有 FA_ID 失效**
 
@@ -885,6 +886,8 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 ---
 
 ### 12. 日志格式规范
+
+> 完整模板参考：`docs/templates/main-log-template.md`
 
 追加到 `{PROJECT_ROOT}/outputs/main-log.md`，每行以 `- ` 开头。
 

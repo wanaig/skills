@@ -64,6 +64,8 @@
 
 #### Step 1: dev-plan.md
 
+> 格式规范参考：`docs/templates/dev-plan-template.md`
+
 开发计划，格式如下：
 
 ```markdown

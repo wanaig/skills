@@ -116,15 +116,34 @@
 **子Agent的职责**：
 - 完成后将 Agent ID 写入 `{FRONTEND_ROOT}/outputs/agent-registry/fullstack_{key}.json`
 
-如果获取不到 ID，**禁止跳过、禁止启动新Agent**。暂停并报告错误。
+**容错处理**：读取 agent-registry/fullstack_{key}.json 失败时，记录该 Agent 为"降级通过"，在日志中标注。不阻塞流程，不询问用户。
 
 #### ID 使用规则
 
-1. **resume 必须用 Task 的 task_id**（裸 ID），不带任何前缀
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
 2. **resume 必须指定 subagent_type="general"**，并在 resume 前先 skill(name: "...") 加载对应技能
 3. **每批开发轮次结束后，DEV_ID 失效**，新批重新启动开发Agent
 4. **同批修正循环中复用同一个 DEV_ID**，禁止启动新Agent
 5. **同批修正循环中复用测试Agent ID**，新批开发时重新启动
+
+---
+
+### 状态检查与恢复（先读日志和计划，再决策）
+
+> **日志和计划是决策依据，不只是输出。** 每次启动时先检查已有状态，决定是全新启动还是断点续传。
+
+1. 检查 `{FRONTEND_ROOT}/outputs/main-log.md` 是否存在且有内容（用 Read 读最后 20 行）
+2. **全新启动**（日志为空或无"项目完成"记录）：
+   - 日志标注：`- {yymmdd hhmm} 状态检查：全新启动`
+   - 进入 Phase 1（集成规划）
+3. **断点续传**（日志存在且未完成）：
+   - 从日志最后几行提取：最后完成的 Batch 编号、已完成的接口列表
+   - 读取 `integration-plan.md` 获取剩余 ⏳ 任务
+   - 日志标注：`- {yymmdd hhmm} 状态检查：断点续传，从 Batch {N+1} 继续`
+   - 跳过 Phase 1，直接进入 Phase 2
+4. **已完成**（日志含"项目完成"）：
+   - 向用户报告：`联调已完成，共 {N} 个接口，详见 main-log.md`
+   - 停止
 
 ---
 
@@ -138,7 +157,7 @@
 skill(name: "fs_planner")
 Task(
   subagent_type: "general",
-  prompt: "前端项目根目录：{FRONTEND_ROOT}/project\n后端项目根目录：{BACKEND_ROOT}\nFlutter 项目根目录：{FLUTTER_ROOT}（如无则标记 N/A）\n区块链项目根目录：{BLOCKCHAIN_ROOT}（如无则标记 N/A）\nUI/UX 架构文档路径：{UI_UX_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\n基础设施架构文档路径：{INFRA_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n前端经验库路径：{FRONTEND_LESSONS}\n后端经验库路径：{BACKEND_LESSONS}\nFlutter 经验库路径：{FLUTTER_LESSONS}\n区块链经验库路径：{BLOCKCHAIN_LESSONS}\n区块链合约 ABI 目录：{BLOCKCHAIN_ABI_DIR}（如无则标记 N/A）\n代码输出目录：{FRONTEND_ROOT}/project\n计划输出目录：{FRONTEND_ROOT}/outputs/fs_planner\n\n请扫描各端代码现状、阅读 API 契约和架构文档，产出 integration-plan.md、integration-design-guide.md（写入计划输出目录），并创建前端 API 调用层（写入代码输出目录的 src/api/）、共享类型文件（src/types/api.ts）和 Vite 代理配置。完成后只返回文件路径列表。"
+  prompt: "前端项目根目录：{FRONTEND_ROOT}/project\n后端项目根目录：{BACKEND_ROOT}\nFlutter 项目根目录：{FLUTTER_ROOT}（如无则标记 N/A）\n区块链项目根目录：{BLOCKCHAIN_ROOT}（如无则标记 N/A）\nUI/UX 架构文档路径：{UI_UX_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\n基础设施架构文档路径：{INFRA_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n前端经验库路径：{FRONTEND_LESSONS}\n后端经验库路径：{BACKEND_LESSONS}\nFlutter 经验库路径：{FLUTTER_LESSONS}\n区块链经验库路径：{BLOCKCHAIN_LESSONS}\n区块链合约 ABI 目录：{BLOCKCHAIN_ABI_DIR}（如无则标记 N/A）\n代码输出目录：{FRONTEND_ROOT}/project\n计划输出目录：{FRONTEND_ROOT}/outputs/fs_planner\n\n请扫描各端代码现状、阅读 API 契约和架构文档，产出 integration-plan.md、integration-design-guide.md（写入计划输出目录），并按 tech-stack.md 推荐的技术栈创建前端 API 调用层和共享类型文件。完成后只返回文件路径列表。"
 )
 ```
 
@@ -154,6 +173,10 @@ Task(
 ---
 
 ### Step 3: Phase 2 — 批量对接循环
+
+> **全部自动执行，逐批推进，不中途询问用户。** 每批完成后立即自动进入下一批，直到所有 ⏳ 任务完成。
+>
+> **决策依据**：每批开始时，先读取 `main-log.md`（确认上次进度），再读取 `integration-plan.md`（获取待办任务），两相结合确定当前批次。
 
 读取 `{FRONTEND_ROOT}/outputs/fs_planner/integration-plan.md`，获取所有 ⏳ 任务。
 
@@ -172,7 +195,7 @@ skill(name: "fs_api_dev")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "对接任务：{接口1} ({描述}), {接口2} ({描述}), ...\nintegration-plan: {FRONTEND_ROOT}/outputs/fs_planner/integration-plan.md\nintegration-design-guide: {FRONTEND_ROOT}/outputs/fs_planner/integration-design-guide.md\nfullstack-lessons-learned: {FRONTEND_ROOT}/outputs/fs_api_dev/fullstack-lessons-learned.md\n前端项目根目录：{FRONTEND_ROOT}/project\n后端项目根目录：{BACKEND_ROOT}\nFlutter 项目根目录：{FLUTTER_ROOT}（如无则标记 N/A）\n区块链项目根目录：{BLOCKCHAIN_ROOT}（如无则标记 N/A）\n区块链合约 ABI 目录：{BLOCKCHAIN_ABI_DIR}（如无则标记 N/A）\nAPI 契约文档：{CONTRACT_FILE}\n\n请按顺序逐接口对接，确保前端类型定义、请求参数与后端响应格式完全一致。"
+  prompt: "对接任务：{接口1} ({描述}), {接口2} ({描述}), ...\nintegration-plan: {FRONTEND_ROOT}/outputs/fs_planner/integration-plan.md\nintegration-design-guide: {FRONTEND_ROOT}/outputs/fs_planner/integration-design-guide.md\ntech-stack: {TECH_STACK_FILE}\nfullstack-lessons-learned: {FRONTEND_ROOT}/outputs/fs_api_dev/fullstack-lessons-learned.md\n前端项目根目录：{FRONTEND_ROOT}/project\n后端项目根目录：{BACKEND_ROOT}\nFlutter 项目根目录：{FLUTTER_ROOT}（如无则标记 N/A）\n区块链项目根目录：{BLOCKCHAIN_ROOT}（如无则标记 N/A）\n区块链合约 ABI 目录：{BLOCKCHAIN_ABI_DIR}（如无则标记 N/A）\nAPI 契约文档：{CONTRACT_FILE}\n\n请按顺序逐接口对接，确保前端类型定义、请求参数与后端响应格式完全一致。"
 )
 ```
 
@@ -244,7 +267,7 @@ Task(
    Task(
      task_id: "{DEV_ID}",
      subagent_type: "general",
-     prompt: "请读取以下联调测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标接口：{FAIL接口名列表}\n前端项目根目录：{FRONTEND_ROOT}/project\n后端项目根目录：{BACKEND_ROOT}\nfullstack-lessons-learned: {FRONTEND_ROOT}/outputs/fs_api_dev/fullstack-lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
+           prompt: "请读取以下联调测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标接口：{FAIL接口名列表}\n前端项目根目录：{FRONTEND_ROOT}/project\n后端项目根目录：{BACKEND_ROOT}\ntech-stack: {TECH_STACK_FILE}\nfullstack-lessons-learned: {FRONTEND_ROOT}/outputs/fs_api_dev/fullstack-lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
    ```
 3. 记录日志：`- {yymmdd hhmm} 第1轮修正完成：{FAIL接口列表}(DEV_ID:{DEV_ID})`
 4. 对每个有 FAIL 的测试维度，resume 对应的测试 Agent 重新测试本批全部接口
@@ -288,8 +311,9 @@ Task(
   - {yymmdd hhmm} {接口名} 联调完成，迭代{round}次
   ```
 - 向用户报告：`"Batch {N} 联调完成：{接口列表}（{已完成}/{总数}），平均迭代{M}次"`
+- **自动继续**：报告后立即回到 Phase 2 开头，读取 integration-plan.md 获取下一批 ⏳ 任务，启动下一批联调-测试循环。**不等待用户，不问用户，全程自动推进直到所有批次完成。**
 
-#### 进入下一个批次
+#### 进入下一个批次（自动，不询问）
 
 ---
 
@@ -329,6 +353,8 @@ Task(
 ---
 
 ### 日志格式规范
+
+> 完整模板参考：`docs/templates/main-log-template.md`
 
 追加到 `{FRONTEND_ROOT}/outputs/main-log.md`，每行以 `- ` 开头。
 
@@ -374,9 +400,35 @@ Task(
 
 ---
 
+#### 异常事件日志格式
+
+当以下异常事件发生时，按对应格式追加日志：
+
+**Agent 超时**：
+```
+- {yymmdd hhmm} Agent超时：{agent_type}（{agent_id}），超时批次 {batch}
+```
+
+**Agent Registry 读取失败**：
+```
+- {yymmdd hhmm} ⚠️ agent-registry/fullstack_{key}.json 读取失败，{Agent名} 降级通过
+```
+
+**Agent 会话过期（无法 resume）**：
+```
+- {yymmdd hhmm} ⚠️ {Agent名} 会话过期（ID: {agent_id}），无法 resume，降级通过
+```
+
+**修正循环降级**：
+```
+- {yymmdd hhmm} ⚠️ {接口列表} 3轮修正后仍有 blocker/major FAIL，自动降级通过
+```
+
+---
+
 ### 关键规则
 
-1. **resume 用 Task task_id**，必须指定 subagent_type="general" 并在 resume 前 skill(name: "...")
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
 2. **不在 prompt 中重复 agent 定义已有内容**，定义管"怎么干活"，prompt 只说"干什么活"
 3. **不读子Agent产出文件的内容**，只接受路径（**例外：integration-plan.md 由主Agent直接读写，用于提取任务列表和更新状态**）
 4. **每批任务完成必须更新 integration-plan.md**
@@ -386,6 +438,9 @@ Task(
 8. **测试报告由测试Agent写入，开发Agent读取**
 9. **lessons-learned.md 由开发Agent修正后更新**
 10. **每批开发轮次结束后，DEV_ID 和 TEST_*_ID 全部失效，新批重新启动所有Agent**
+11. **Severity 分级** — 测试报告中的 FAIL 按 blocker/major/minor 三级定级：blocker（接口数据不一致/类型不匹配）、major（数据流断裂/契约偏差）、minor（可接受的优化项）。仅 minor 级别允许 ⚠️ 降级通过
+12. **不执行回滚** — 3 轮修正后仍有 blocker/major 的自动降级为 ⚠️，记录到日志，不重试，不询问用户
+13. **修正轮次成本洞察** — 修正轮次越高说明 prompt 或联调质量存在问题，建议在 lessons-learned 中重点记录
 
 ### 数据访问边界（明确什么可读、什么不可读）
 
@@ -396,22 +451,22 @@ Task(
 | 架构文档（TECH_STACK_FILE 等） | **否** | 只传路径给子Agent | 保护上下文，子Agent 自行读取 |
 | API 契约文档（CONTRACT_FILE） | **否** | 只传路径给子Agent | 保护上下文，子Agent 自行读取 |
 | integration-plan.md | **是** | Read 全文（但仅读取任务列表部分） | 提取 ⏳ 任务列表，更新完成状态 |
-| test-report.json | **是（仅 verdict 和 severity 字段）** | `jq -r '.verdict'` 或 Grep 提取判定行 | 判定 PASS/FAIL，判断是否需要修正 |
+| test-report.json | **是（仅 verdict 和 severity 字段）** | Read 提取 `verdict` 字段 | 判定 PASS/FAIL，判断是否需要修正 |
 | 测试报告 markdown 全文 | **否** | 把路径传给开发 Agent，由开发 Agent 自行读取 | 保护上下文 |
 | lessons-learned.md | **否** | 由开发 Agent 维护，主 Agent 不读 | 保护上下文 |
 | 源代码文件（.ts/.vue/.js/.dart） | **否** | 全部委托给 fs_api_dev | 防止越权修改 |
 
 **核心原则**：主Agent 只读取两类数据 — (a) 结构化状态（integration-plan.md 的任务列表、test-report.json 的 verdict/severity 字段），(b) 路径和名称。其他一切内容由子Agent 自行读取。
 
-### 补充规则（11-17）
+### 补充规则（14-20）
 
-11. **架构文档只传路径不读内容** — 初始化时只记录 `CONTRACT_FILE`、`TECH_STACK_FILE`、`DATA_ARCHITECTURE_FILE`、`UI_UX_FILE`、`IMPLEMENTATION_ROADMAP_FILE` 路径，把路径传给 fs_planner 让它自己读
-12. **测试结果只读 JSON 判定** — 读取 test-report.json 中的 `verdict` 字段，不 Read 完整报告
-13. **所有代码修改委托给 fs_api_dev** — 即使改一行 import 也要委托（skill(name: "fs_api_dev") + Task(subagent_type: "general")），主Agent不碰源代码
-14. **后台通知简短确认** — 迟到的后台Agent通知只需回复"已确认"，不复述内容
-15. **开发批量 = 测试批量** — 默认 BATCH_SIZE=1（单接口），用户可指定 N。开发N个接口时测试也是3个Agent各测N个，开发批量与测试批量保持一致
-16. **并发上限始终为3** — 测试阶段始终只有3个Agent并行（契约/数据流/集测各一个），每个Agent内部处理本批所有接口。开发阶段每批只启动1个开发Agent
-17. **成本追踪规则**：每批完成后在 main-log.md 追加该批Agent调用次数（开发+测试+修正），Phase 结束时汇总总调用次数。优先关注修正轮次成本——修正轮次越高说明 prompt 或 PRD 质量存在问题。
+14. **架构文档只传路径不读内容** — 初始化时只记录 `CONTRACT_FILE`、`TECH_STACK_FILE`、`DATA_ARCHITECTURE_FILE`、`UI_UX_FILE`、`IMPLEMENTATION_ROADMAP_FILE` 路径，把路径传给 fs_planner 让它自己读
+15. **测试结果只读 JSON 判定** — 读取 test-report.json 中的 `verdict` 字段，不 Read 完整报告
+16. **所有代码修改委托给 fs_api_dev** — 即使改一行 import 也要委托（skill(name: "fs_api_dev") + Task(subagent_type: "general")），主Agent不碰源代码
+17. **后台通知简短确认** — 迟到的后台Agent通知只需回复"已确认"，不复述内容
+18. **开发批量 = 测试批量** — 默认 BATCH_SIZE=1（单接口），用户可指定 N。开发N个接口时测试也是3个Agent各测N个，开发批量与测试批量保持一致
+19. **并发上限始终为3** — 测试阶段始终只有3个Agent并行（契约/数据流/集测各一个），每个Agent内部处理本批所有接口。开发阶段每批只启动1个开发Agent
+20. **成本追踪规则**：每批完成后在 main-log.md 追加该批Agent调用次数（开发+测试+修正），Phase 结束时汇总总调用次数。优先关注修正轮次成本——修正轮次越高说明 prompt 或 PRD 质量存在问题。
 
 ---
 

@@ -104,6 +104,17 @@
 
 ---
 
+### 状态检查与恢复（先读日志和计划，再决策）
+
+> **日志和计划是决策依据，不只是输出。** 每次启动时先检查已有状态。
+
+1. 检查 `{DEPLOY_ROOT}/outputs/main-log.md` 是否存在且有内容（用 Read 读最后 20 行）
+2. **全新启动**（日志为空）→ 日志标注 `- {yymmdd hhmm} 状态检查：全新启动` → 进入 Step 3
+3. **断点续传**（日志存在且未完成）→ 从日志提取最后完成阶段 → 日志标注 `- {yymmdd hhmm} 状态检查：断点续传` → 跳至对应 Phase
+4. **已完成** → 停止
+
+---
+
 ### Step 3：Phase 1 — 部署计划
 
 **日志写入**：`- {yymmdd hhmm} 启动部署计划子Agent`
@@ -134,6 +145,8 @@ Task(
 
 ### Step 4：Phase 2 — 基础设施配置
 
+> **决策依据**：先读 main-log.md 确认 Phase 1 完成状态，再启动本阶段。
+
 **日志写入**：`- {yymmdd hhmm} 启动部署基础设施子Agent`
 
 启动 deploy_infra 子Agent：
@@ -142,7 +155,7 @@ Task(
 skill(name: "deploy_infra")
 Task(
   subagent_type: "general",
-  prompt: "部署计划：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-plan.md\n部署配置：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-config.md\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n前端项目根目录：{FRONTEND_ROOT}\n后端项目根目录：{BACKEND_ROOT}\n代码输出目录：{DEPLOY_ROOT}/project\n\n请根据部署计划和架构文档，创建 docker-compose.prod.yml、nginx 配置、迁移脚本和部署脚本，写入代码输出目录。完成后只返回文件路径列表。"
+  prompt: "部署计划：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-plan.md\n部署配置：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-config.md\n技术栈文档：{TECH_STACK_FILE}\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n前端项目根目录：{FRONTEND_ROOT}\n后端项目根目录：{BACKEND_ROOT}\n代码输出目录：{DEPLOY_ROOT}/project\n\n请根据部署计划和架构文档，创建部署配置文件（docker-compose、K8s manifests、nginx、脚本等，按 infra-architecture.md 推荐的部署形态），写入代码输出目录。完成后只返回文件路径列表。"
 )
 ```
 
@@ -165,7 +178,7 @@ Task(
 skill(name: "deploy_verifier")
 Task(
   subagent_type: "general",
-  prompt: "部署计划：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-plan.md\n部署配置：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-config.md\n部署检查清单：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-checklist.md\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_verifier\n\n请对照架构文档和检查清单，验证所有部署配置的完整性和安全性。测试报告同时输出 markdown 和 JSON 格式，JSON 报告命名为 deploy-verification-report.json。所有判定均从 JSON 的 verdict 字段提取。"
+  prompt: "部署计划：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-plan.md\n部署配置：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-config.md\n部署检查清单：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-checklist.md\n技术栈文档：{TECH_STACK_FILE}\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_verifier\n\n请对照架构文档和检查清单，验证所有部署配置的完整性和安全性。测试报告同时输出 markdown 和 JSON 格式，JSON 报告命名为 deploy-verification-report.json。所有判定均从 JSON 的 verdict 字段提取。"
 )
 ```
 
@@ -260,6 +273,8 @@ Task(
 
 ### 异常事件日志格式
 
+> 完整模板参考：`docs/templates/main-log-template.md`
+
 当以下异常事件发生时，按对应格式追加日志：
 
 **Agent 超时/失败**：
@@ -286,7 +301,7 @@ architecture/ → frontend/ + backend/ + flutter/ + blockchain/ → fullstack/ �
    (Phase 0)               (Phase 1, 可并行)                    (Phase 2)    (Phase 3)
 ```
 
-deploy 是整个多智能体系统的最后一环。其产出的 `docker-compose.prod.yml`、`deploy.sh`、`deploy-checklist.md` 等文件构成完整的生产环境部署包。如有区块链项目，部署包中额外包含 FISCO BCOS 节点配置和合约部署脚本。
+deploy 是整个多智能体系统的最后一环。其产出的部署配置文件构成完整的生产环境部署包。如有区块链项目，部署包中额外包含节点配置和合约部署脚本。
 
 ---
 

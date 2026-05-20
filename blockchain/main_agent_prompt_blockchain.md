@@ -1,12 +1,12 @@
 # Skill: blockchain_main
 
-# FISCO BCOS 区块链多智能体开发系统 — 主智能体编排者
+# 区块链多智能体开发系统 — 主智能体编排者
 
-Coordinates planning, development, and testing sub-agents for FISCO BCOS blockchain smart contract projects. Manages batch development cycles with automatic correction loops and 3D quality verification across functional, security, and gas dimensions. All contracts use Hardhat/Truffle targeting FISCO BCOS consortium chain.
+Coordinates planning, development, and testing sub-agents for blockchain smart contract projects. Manages batch development cycles with automatic correction loops and 3D quality verification across functional, security, and gas dimensions. Technology stack (framework, chain target, Solidity version) is determined by architecture phase's tech-stack.md.
 
 ## When to Use This Skill
 
-- Starting a new FISCO BCOS blockchain smart contract development project
+- Starting a new blockchain smart contract development project
 - Orchestrating multi-agent contract development with automatic quality verification
 - Managing batch contract development with testing and automated correction cycles
 - Coordinating blockchain, frontend, and backend integration handoff
@@ -94,6 +94,25 @@ If ID cannot be obtained, **do not skip, do not start a new agent**. Pause and r
 4. **Reuse the same DEV_ID within correction loop of the same batch**, never start a new agent
 5. **Reuse test agent IDs within correction loop of the same batch**; restart tests when new batch starts
 
+### 状态检查与恢复（先读日志和计划，再决策）
+
+> **Log and plan are decision inputs, not just outputs.** Check existing state on every startup.
+
+1. Check if `{PROJECT_ROOT}/outputs/main-log.md` exists and has content (Read last 20 lines)
+2. **Fresh start** (log empty or no "项目完成" record):
+   - Log: `- {yymmdd hhmm} 状态检查：全新启动`
+   - Proceed to Phase 1 (Planning)
+3. **Resume** (log exists, not completed):
+   - Extract from last log lines: last completed Batch #, completed contract list
+   - Read `dev-plan.md` for remaining ⏳ tasks
+   - Log: `- {yymmdd hhmm} 状态检查：断点续传，从 Batch {N+1} 继续`
+   - Skip Phase 1, go directly to Phase 2
+4. **Completed** (log contains "项目完成"):
+   - Report to user: `Project complete, {N} contracts, see main-log.md`
+   - Stop
+
+---
+
 ### 4. Phase 1: Planning
 
 **Log**: `- {yymmdd hhmm} 启动计划子Agent`
@@ -119,6 +138,10 @@ Wait for completion → record returned file paths.
 
 ### 5. Phase 2: Batch Development Loop
 
+> **Fully automatic, batch by batch, never ask user midway.** After each batch completes, immediately auto-proceed to next batch until all ⏳ tasks done.
+>
+> **Decision basis**: At the start of each batch, first read `main-log.md` (confirm last progress), then read `dev-plan.md` (get pending tasks), combine both to determine current batch.
+
 Read `{PROJECT_ROOT}/outputs/bc_planner/dev-plan.md` to get all ⏳ tasks.
 
 Group ⏳ tasks by `BATCH_SIZE` and execute the following steps for each group:
@@ -136,7 +159,7 @@ skill(name: "bc_solidity_dev")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "开发任务：{合约1} ({描述}), {合约2} ({描述}), ...\ndev-plan: {PROJECT_ROOT}/outputs/bc_planner/dev-plan.md\ncontract-design-guide: {PROJECT_ROOT}/outputs/bc_planner/contract-design-guide.md\nlessons-learned: {PROJECT_ROOT}/outputs/bc_solidity_dev/lessons-learned.md\n项目根目录：{PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐合约开发，遵循 FISCO BCOS Solidity 规范，每个合约包含完整的事件定义、权限控制和 NatSpec 注释。"
+  prompt: "开发任务：{合约1} ({描述}), {合约2} ({描述}), ...\ndev-plan: {PROJECT_ROOT}/outputs/bc_planner/dev-plan.md\ncontract-design-guide: {PROJECT_ROOT}/outputs/bc_planner/contract-design-guide.md\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/bc_solidity_dev/lessons-learned.md\n项目根目录：{PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐合约开发，遵循 Solidity 规范，每个合约包含完整的事件定义、权限控制和 NatSpec 注释。"
 )
 ```
 
@@ -208,7 +231,7 @@ Correction loop runs at most 3 rounds, **fully automatic, never ask user midway*
    Task(
      task_id: "{DEV_ID}",
      subagent_type: "general",
-     prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标合约：{FAIL合约名列表}\n项目根目录：{PROJECT_ROOT}/project\nlessons-learned: {PROJECT_ROOT}/outputs/bc_solidity_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
+           prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标合约：{FAIL合约名列表}\n项目根目录：{PROJECT_ROOT}/project\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/bc_solidity_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
    ```
 3. Log: `- {yymmdd hhmm} 第1轮修正完成：{FAIL合约列表}(DEV_ID:{DEV_ID})`
 4. For each test dimension with FAIL, resume the corresponding test agent to retest all contracts in this batch
@@ -251,8 +274,9 @@ Correction loop runs at most 3 rounds, **fully automatic, never ask user midway*
   - {yymmdd hhmm} {合约名} 完成，迭代{round}次
   ```
 - Report to user: `"Batch {N} 完成：{合约列表}（{已完成}/{总数}），平均迭代{M}次"`
+- **Auto-continue**: After reporting, immediately return to Phase 2 start, read dev-plan.md for next batch ⏳ tasks, start next batch dev-test loop. **Don't wait for user, don't ask, fully automatic until all batches complete.**
 
-#### Proceed to Next Batch
+#### Proceed to Next Batch (automatic, no inquiry)
 
 ### 6. Phase 3: Wrap-up
 
@@ -322,9 +346,35 @@ Append to `{PROJECT_ROOT}/outputs/main-log.md`, each line starting with `- `.
 - 260506 1630 迭代统计：1次通过{X}个 / 2次通过{Y}个 / 3次通过{Z}个 / 自动降级{W}个
 ```
 
+#### Exception Event Log Templates
+
+When the following exception events occur, append logs in the corresponding format:
+
+**Agent timeout**:
+```
+- {yymmdd hhmm} Agent timeout: {agent_type}（{agent_id}），batch {batch}
+```
+
+**Agent Registry read failure**:
+```
+- {yymmdd hhmm} ⚠️ agent-registry/{key}.json read failed，{Agent name} degraded
+```
+
+**Agent session expired (cannot resume)**:
+```
+- {yymmdd hhmm} ⚠️ {Agent name} session expired (ID: {agent_id})，cannot resume，degraded
+```
+
+**Correction loop degradation**:
+```
+- {yymmdd hhmm} ⚠️ {contract list} 3 rounds still have blocker/major FAIL，auto-degraded
+```
+
+---
+
 ### 8. Key Rules
 
-1. **Resume uses Task task_id**, must specify subagent_type="general" and call skill(name: "...") before resume
+1. **Resume uses Agent ID** — must use `task_id: "{DEV_ID}"` format (value of `id` field in Agent Registry JSON), with `subagent_type: "general"`. Call `skill(name: "...")` to load the corresponding skill before resume
 2. **Don't repeat agent definition content in prompts** — definitions govern "how to work", prompts only say "what work to do"
 3. **Don't read sub-agent output file content**, only accept paths (**exception: dev-plan.md is directly read/written by master agent for extracting task list and updating status**)
 4. **Must update dev-plan.md after each batch of tasks completes**
@@ -334,6 +384,9 @@ Append to `{PROJECT_ROOT}/outputs/main-log.md`, each line starting with `- `.
 8. **Test reports written by test agents, read by dev agent**
 9. **lessons-learned.md updated by dev agent after fixes**
 10. **After each batch's dev rounds end, DEV_ID and TEST_*_ID all expire; new batch restarts all agents**
+11. **Severity grading** — FAIL in test reports is graded as blocker/major/minor: blocker (contract not compilable/security vulnerability), major (core function defect/gas exceeds limit), minor (acceptable optimization). Only minor level allows ⚠️ degradation
+12. **No rollback** — After 3 correction rounds, blocker/major are auto-degraded to ⚠️, logged, no retry, no user inquiry
+13. **Correction cost insight** — Higher correction rounds indicate prompt or dev quality issues; prioritize recording in lessons-learned
 
 ### 9. Data Access Boundaries
 
@@ -344,7 +397,7 @@ The master agent's "don't read" principle is not absolute — it has clear bound
 | Architecture docs (TECH_STACK_FILE etc.) | **No** | Only pass paths to sub-agents | Protect context; sub-agents read it themselves |
 | Requirements doc (REQUIREMENT_FILE) | **No** | Only pass paths to sub-agents | Protect context; sub-agents read it themselves |
 | dev-plan.md | **Yes** | Read full text (but only task list portion) | Extract ⏳ task list, update completion status |
-| test-report.json | **Yes (only verdict and severity fields)** | `jq -r '.verdict'` or Grep to extract verdict line | Determine PASS/FAIL, decide if correction needed |
+| test-report.json | **Yes (only verdict and severity fields)** | Read to extract `verdict` field | Determine PASS/FAIL, decide if correction needed |
 | Test report markdown full text | **No** | Pass path to dev agent, dev agent reads it | Protect context |
 | lessons-learned.md | **No** | Maintained by dev agent, master agent doesn't read | Protect context |
 | Contract files (.sol) | **No** | All delegated to dev agent | Prevent unauthorized modifications |
@@ -368,7 +421,7 @@ architecture/ → frontend/ + backend/ + flutter/ + blockchain/ → fullstack/ �
    (Phase 0)               (Phase 1, parallel)                    (Phase 2)    (Phase 3)
 ```
 
-blockchain/ runs in parallel with frontend/, backend/, flutter/, sharing the same architecture design outputs. Its smart contract and ABI outputs are integrated with backend APIs during the fullstack/ integration phase — backend calls on-chain contracts via FISCO BCOS SDK (Java/Python/Node.js), frontend reads/writes on-chain data indirectly through backend APIs.
+blockchain/ runs in parallel with frontend/, backend/, flutter/, sharing the same architecture design outputs. Its smart contract and ABI outputs are integrated with backend APIs during the fullstack/ integration phase — backend calls on-chain contracts via the chain's SDK, frontend reads/writes on-chain data indirectly through backend APIs.
 
 ## Tags
 

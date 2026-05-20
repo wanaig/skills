@@ -253,7 +253,8 @@ DEPLOY_ROOT
 │   ├── outputs/
 │   └── project/
 │
-└── docs/               # 详细文档
+└── docs/               # 详细文档 + 标准模板
+    ├── templates/       #  dev-plan.md / main-log.md / lessons-learned.md 模板
 ```
 
 ---
@@ -289,6 +290,7 @@ DEPLOY_ROOT
 
 - [系统架构](docs/architecture.md) — Agent 角色总览、执行顺序、数据流
 - [设计原理](docs/design_principles.md) — 方法论、上下文策略、流程设计
+- [标准模板](docs/templates/) — dev-plan.md / main-log.md / lessons-learned.md 标准格式
 
 ## 项目定位
 

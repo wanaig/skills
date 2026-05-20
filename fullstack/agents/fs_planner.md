@@ -68,6 +68,8 @@
 
 #### 写 integration-plan.md
 
+> 格式规范参考：`docs/templates/dev-plan-template.md`
+
 对接计划，格式如下：
 
 ```markdown

@@ -59,6 +59,8 @@ Vue前端项目计划与基础设施工程师。阅读需求文档和设计规�
 
 #### Step 1: dev-plan.md
 
+> 格式规范参考：`docs/templates/dev-plan-template.md`
+
 开发计划，格式如下：
 
 ```markdown

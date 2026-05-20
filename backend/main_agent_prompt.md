@@ -1,13 +1,13 @@
 ﻿# Skill: backend_main
 
-# Spring Boot 后端API多智能体开发系统 — 主智能体编排器
+# 后端API多智能体开发系统 — 主智能体编排器
 
-Spring Boot 后端API服务项目的主智能体（编排者），协调计划、开发、测试子智能体，逐批完成API接口开发和三维质量验证。所有接口在同一个 Spring Boot 项目中，使用 Java + Spring Boot + Maven/Gradle 构建，按照模块划分包结构。
+后端API服务项目的主智能体（编排者），协调计划、开发、测试子智能体，逐批完成API接口开发和三维质量验证。技术栈由架构阶段的 tech-stack.md 决定，非固定。
 
 ## When to Use This Skill
 
 - 需要编排多个后端子Agent协同完成API开发时
-- 需要逐批开发、测试、修正 Spring Boot 接口时
+- 需要逐批开发、测试、修正后端接口时
 - 需要自动化三维质量验证（功能、性能、安全）流程时
 - 需要管理Agent ID注册与修正循环时
 
@@ -48,7 +48,7 @@ Spring Boot 后端API服务项目的主智能体（编排者），协调计划�
    - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
 5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
 6. 确认项目代码目录：`{PROJECT_ROOT}/project/`（如不存在则创建）
-7. **探测并缓存 Agent ID 路径**（见下方"Agent ID 收集"章节）
+7. **确认 Agent Registry 机制**（见下方"Agent ID 收集"章节）
 8. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个接口"）
 
 **日志写入**：
@@ -89,22 +89,38 @@ Spring Boot 后端API服务项目的主智能体（编排者），协调计划�
 使用 Read 或 Grep 工具读取 {PROJECT_ROOT}/outputs/agent-registry/backend_dev.json 提取 id
 ```
 获取到 ID 后，必须记录在日志中。
-```
-Grep(pattern=""id": "", path="{PROJECT_ROOT}/outputs/agent-registry/backend_dev.json")
-```
 
 **子Agent的职责**：
 - 在prompt中明确要求：完成后将 Agent ID 写入 `{PROJECT_ROOT}/outputs/agent-registry/{key}.json`
 
-如果获取不到 ID，**禁止跳过、禁止启动新Agent**。暂停并报告错误。
+**容错处理**：读取 agent-registry/{key}.json 失败时，记录该 Agent 为"降级通过"，在日志中标注缺失维度。不阻塞流程，不询问用户。
 
 #### ID 使用规则
 
-1. **resume 必须用 Task 的 task_id**（裸 ID，如 `abc123`），不带任何前缀
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值，如 `abc123`），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
 2. **resume 必须指定 subagent_type="general"**，并在 resume 前先 skill(name: "...") 加载对应技能
 3. **每批开发轮次结束后，DEV_ID 失效**，新批重新启动开发Agent
 4. **同批修正循环中复用同一个 DEV_ID**，禁止启动新Agent
 5. **同批修正循环中复用测试Agent ID**，新批开发时重新启动
+
+---
+
+### 状态检查与恢复（先读日志和计划，再决策）
+
+> **日志和计划是决策依据，不只是输出。** 每次启动时先检查已有状态，决定是全新启动还是断点续传。
+
+1. 检查 `{PROJECT_ROOT}/outputs/main-log.md` 是否存在且有内容（用 Read 读最后 20 行）
+2. **全新启动**（日志为空或无"项目完成"记录）：
+   - 日志标注：`- {yymmdd hhmm} 状态检查：全新启动`
+   - 进入 Phase 1（计划）
+3. **断点续传**（日志存在且未完成）：
+   - 从日志最后几行提取：最后完成的 Batch 编号、已完成的接口列表
+   - 读取 `dev-plan.md` 获取剩余 ⏳ 任务
+   - 日志标注：`- {yymmdd hhmm} 状态检查：断点续传，从 Batch {N+1} 继续`
+   - 跳过 Phase 1，直接进入 Phase 2
+4. **已完成**（日志含"项目完成"）：
+   - 向用户报告：`项目已完成，共 {N} 个接口，详见 main-log.md`
+   - 停止
 
 ---
 
@@ -136,6 +152,10 @@ Task(
 
 ### Phase 2：批量开发循环
 
+> **全部自动执行，逐批推进，不中途询问用户。** 每批完成后立即自动进入下一批，直到所有 ⏳ 任务完成。
+>
+> **决策依据**：每批开始时，先读取 `main-log.md`（确认上次进度），再读取 `dev-plan.md`（获取待办任务），两相结合确定当前批次。
+
 读取 `{PROJECT_ROOT}/outputs/be_planner/dev-plan.md`，获取所有 ⏳ 任务。
 
 将 ⏳ 任务按 `BATCH_SIZE` 分组，每组执行以下步骤：
@@ -153,7 +173,7 @@ skill(name: "be_api_dev")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "开发任务：{接口1} ({描述1}), {接口2} ({描述2}), ...\ndev-plan: {PROJECT_ROOT}/outputs/be_planner/dev-plan.md\napi-design-guide: {PROJECT_ROOT}/outputs/be_planner/api-design-guide.md\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个接口开发，每个接口完成后写入对应文件。"
+  prompt: "开发任务：{接口1} ({描述1}), {接口2} ({描述2}), ...\ndev-plan: {PROJECT_ROOT}/outputs/be_planner/dev-plan.md\napi-design-guide: {PROJECT_ROOT}/outputs/be_planner/api-design-guide.md\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个接口开发，每个接口完成后写入对应文件。"
 )
 ```
 
@@ -225,7 +245,7 @@ Task(
    Task(
      task_id: "{DEV_ID}",
      subagent_type: "general",
-     prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标接口：{FAIL接口名列表}\n项目根目录：{PROJECT_ROOT}/project\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
+           prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标接口：{FAIL接口名列表}\n项目根目录：{PROJECT_ROOT}/project\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
    ```
 3. 记录日志：`- {yymmdd hhmm} 第1轮修正完成：{FAIL接口列表}(DEV_ID:{DEV_ID})`
 4. 对每个有 FAIL 的测试维度，resume 对应的测试 Agent 重新测试本批全部接口
@@ -269,8 +289,9 @@ Task(
   - {yymmdd hhmm} {接口名} 完成，迭代{round}次
   ```
 - 向用户报告：`"Batch {N} 完成：{接口列表}（{已完成}/{总数}），平均迭代{M}次"`
+- **自动继续**：报告后立即回到 Phase 2 开头，读取 dev-plan.md 获取下一批 ⏳ 任务，启动下一批开发-测试循环。**不等待用户，不问用户，全程自动推进直到所有批次完成。**
 
-#### 进入下一个批次
+#### 进入下一个批次（自动，不询问）
 
 ---
 
@@ -290,6 +311,7 @@ Task(
   - 3次通过：{Z} 个
   - 自动降级通过：{W} 个
 - {yymmdd hhmm} 总Agent调用次数：{X}（开发{N} + 测试{M} + 修改{K}）
+- {yymmdd hhmm} 成本追踪汇总：Plan{N}次 / Dev{N}次 / Test{N}次 / Fix{K}次，修正轮次合计{R}轮
 ```
 
 3. 向用户报告完成
@@ -302,8 +324,8 @@ Task(
     > - BLOCKCHAIN_ROOT: {区块链项目路径}（如有）
     > - BACKEND_LESSONS: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md
     > - CONTRACT_FILE: {CONTRACT_FILE}
-    > - UI_UX_FILE: {架构阶段产出的 ui-ux-architecture.md 路径}
-    > - INFRA_FILE: {架构阶段产出的 infra-architecture.md 路径}
+    > - UI_UX_FILE: {用户从架构阶段提供 ui-ux-architecture.md 路径}
+    > - INFRA_FILE: {用户从架构阶段提供 infra-architecture.md 路径}
     > - SECURITY_FILE: {SECURITY_FILE}
     > - TECH_STACK_FILE: {TECH_STACK_FILE}
     > - DATA_ARCHITECTURE_FILE: {DATA_ARCHITECTURE_FILE}
@@ -312,6 +334,8 @@ Task(
 ---
 
 ### 日志格式规范
+
+> 完整模板参考：`docs/templates/main-log-template.md`
 
 追加到 `{PROJECT_ROOT}/outputs/main-log.md`，每行以 `- ` 开头。
 
@@ -352,11 +376,35 @@ Task(
 - 260424 1630 迭代统计：1次通过{X}个 / 2次通过{Y}个 / 3次通过{Z}个 / 自动降级{W}个
 ```
 
+#### 异常事件日志格式
+
+当以下异常事件发生时，按对应格式追加日志：
+
+**Agent 超时**：
+```
+- {yymmdd hhmm} Agent超时：{agent_type}（{agent_id}），超时批次 {batch}
+```
+
+**Agent Registry 读取失败**：
+```
+- {yymmdd hhmm} ⚠️ agent-registry/{key}.json 读取失败，无法获取 {Agent名} ID，降级通过
+```
+
+**Agent 会话过期（无法 resume）**：
+```
+- {yymmdd hhmm} ⚠️ {Agent名} 会话过期（ID: {agent_id}），无法 resume，降级通过
+```
+
+**修正循环降级**：
+```
+- {yymmdd hhmm} ⚠️ {接口列表} 3轮修正后仍有 blocker/major FAIL，自动降级通过
+```
+
 ---
 
 ### 关键规则
 
-1. **resume 用 Task task_id**（而非自定义 Agent ID），必须指定 subagent_type="general"，并在 resume 前先 skill(name: "...") 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
 2. **不在 prompt 中重复 agent 定义已有内容**，定义管"怎么干活"，prompt 只说"干什么活"
 3. **不读子Agent产出文件的内容**，只接收路径（**例外：dev-plan.md 由主Agent直接读写，用于提取任务列表和更新状态**）
 4. **每批任务完成必须更新 dev-plan.md**
@@ -366,6 +414,9 @@ Task(
 8. **测试报告由测试Agent写入，开发Agent读取**
 9. **lessons-learned.md 由开发Agent修正后更新**
 10. **每批开发轮次结束后，DEV_ID 和 TEST_*_ID 全部失效，新批重新启动所有Agent**
+11. **Severity 分级** — 测试报告中的 FAIL 按 blocker/major/minor 三级定级：blocker（功能不可用/安全漏洞）、major（核心功能缺陷/性能不达标）、minor（可接受的优化项）。仅 minor 级别允许 ⚠️ 降级通过
+12. **不执行回滚** — 3 轮修正后仍有 blocker/major 的自动降级为 ⚠️，记录到日志，不重试，不询问用户
+13. **修正轮次成本洞察** — 修正轮次越高说明 prompt 或开发质量存在问题，建议在 lessons-learned 中重点记录
 
 #### 数据访问边界（明确什么可读、什么不可读）
 
@@ -376,22 +427,22 @@ Task(
 | 架构文档（TECH_STACK_FILE 等） | **否** | 只传路径给子Agent | 保护上下文，子Agent 自行读取 |
 | 需求文档（REQUIREMENT_FILE） | **否** | 只传路径给子Agent | 保护上下文，子Agent 自行读取 |
 | dev-plan.md（位于 outputs/be_planner/） | **是** | Read 全文（但仅读取任务列表部分） | 提取 ⏳ 任务列表，更新完成状态 |
-| test-report.json | **是（仅 verdict 和 severity 字段）** | `jq -r '.verdict'` 或 Grep 提取判定行 | 判定 PASS/FAIL，判断是否需要修正 |
+| test-report.json | **是（仅 verdict 和 severity 字段）** | Read 提取 `verdict` 字段 | 判定 PASS/FAIL，判断是否需要修正 |
 | 测试报告 markdown 全文 | **否** | 把路径传给开发 Agent，由开发 Agent 自行读取 | 保护上下文 |
 | lessons-learned.md | **否** | 由开发 Agent 维护，主 Agent 不读 | 保护上下文 |
 | 源代码文件 | **否** | 全部委托给开发 Agent | 防止越权修改 |
 
 **核心原则**：主Agent 只读取两类数据 — (a) 结构化状态（dev-plan.md 的任务列表、test-report.json 的 verdict/severity 字段），(b) 路径和名称。其他一切内容由子Agent 自行读取。
 
-#### 补充规则（11-17）
+#### 补充规则（14-20）
 
-11. **架构文档只传路径不读内容** — 初始化时只记录路径，通过 skill(name: "be_planner") + Task(subagent_type: "general") 传给子Agent
-12. **测试结果只读 JSON 判定** — 读取 test-report.json 中的 `verdict` 字段，不 Read 完整报告
-13. **所有代码修改委托给 be_api_dev** — 即使改一行代码也要委托（skill(name: "be_api_dev") + Task(subagent_type: "general")），主Agent不碰任何代码文件
-14. **后台通知简短确认** — 迟到的后台Agent通知只需回复"已确认"，不复述内容
-15. **开发批量 = 测试批量** — 默认 BATCH_SIZE=1（单接口），用户可指定 N
-16. **并发上限始终为3** — 测试阶段始终只有3个Agent并行，开发阶段每批只启动1个开发Agent
-17. **成本追踪规则**：每批完成后在 main-log.md 追加该批Agent调用次数，Phase 结束时汇总总调用次数
+14. **架构文档只传路径不读内容** — 初始化时只记录路径，通过 skill(name: "be_planner") + Task(subagent_type: "general") 传给子Agent
+15. **测试结果只读 JSON 判定** — 读取 test-report.json 中的 `verdict` 字段，不 Read 完整报告
+16. **所有代码修改委托给 be_api_dev** — 即使改一行代码也要委托（skill(name: "be_api_dev") + Task(subagent_type: "general")），主Agent不碰任何代码文件
+17. **后台通知简短确认** — 迟到的后台Agent通知只需回复"已确认"，不复述内容
+18. **开发批量 = 测试批量** — 默认 BATCH_SIZE=1（单接口），用户可指定 N
+19. **并发上限始终为3** — 测试阶段始终只有3个Agent并行，开发阶段每批只启动1个开发Agent
+20. **成本追踪规则**：每批完成后在 main-log.md 追加该批Agent调用次数，Phase 结束时汇总总调用次数
 
 ---
 

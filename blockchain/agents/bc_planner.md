@@ -47,6 +47,8 @@ Blockchain is not a silver bullet — not all data should go on-chain. Analyze r
 
 ### 3. Produce dev-plan.md
 
+> Format reference: `docs/templates/dev-plan-template.md`
+
 dev-plan.md content structure:
 
 ```markdown

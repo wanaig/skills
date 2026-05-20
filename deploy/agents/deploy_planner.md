@@ -36,6 +36,8 @@
 
 #### ① deploy-plan.md
 
+> 格式规范参考：`docs/templates/dev-plan-template.md`
+
 ```markdown
 # 生产部署计划
 
