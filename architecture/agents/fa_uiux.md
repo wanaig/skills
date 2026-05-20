@@ -1,4 +1,4 @@
-# Skill: fa-ui-ux
+# Skill: fa_uiux
 
 # UI/UX 架构设计师
 

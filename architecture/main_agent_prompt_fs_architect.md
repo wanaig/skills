@@ -32,14 +32,9 @@
 2. 确认输出目录路径，记为 `PROJECT_ROOT`
 3. 确认需求文件路径，记为 `REQUIREMENT_FILE`（**注意：不要读取需求文件内容，只记录路径**）
 4. 创建输出目录结构：
-   - `{PROJECT_ROOT}/outputs/fa_techstack/`
-   - `{PROJECT_ROOT}/outputs/fa_data/`
-   - `{PROJECT_ROOT}/outputs/fa_infra/`
-   - `{PROJECT_ROOT}/outputs/fa_security/`
-   - `{PROJECT_ROOT}/outputs/fa_api_design/`
-   - `{PROJECT_ROOT}/outputs/fa_uiux/`
-   - `{PROJECT_ROOT}/outputs/agent-registry/`
-   - `{PROJECT_ROOT}/outputs/artifacts/`
+   - `{PROJECT_ROOT}/outputs/` — 架构设计文档总目录
+   - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
+   - `{PROJECT_ROOT}/outputs/artifacts/` — 可执行制品
 5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
 
 **日志写入**：
@@ -69,7 +64,7 @@
 
 | 信息维度 | 默认假设 | 适用场景 |
 |---------|---------|---------|
-| **团队技能** | TypeScript 全栈（前端 Vue 3 / React 18，后端 Node.js） | 通用互联网项目 |
+| **团队技能** | 前端 Vue 3 + TypeScript，后端 Java / Spring Boot | 通用互联网项目 |
 | **项目规模** | 中小型 SaaS，日均 1000-10000 UV | 无明确指标时 |
 | **性能要求** | 接口响应 < 500ms P95，页面加载 < 3s | 通用 Web 应用 |
 | **可用性** | 99.5%（允许非工作时间短暂中断） | 非金融/医疗行业 |
@@ -115,7 +110,7 @@ Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QP
 ├── fa_infra.json      ← {"id":"ghi789","type":"fa_infra","updated":"..."}
 ├── fa_security.json   ← {"id":"jkl012","type":"fa_security","updated":"..."}
 ├── fa_apidesign.json  ← {"id":"mno345","type":"fa_api_design","updated":"..."}
-└── fa_uiux.json       ← {"id":"pqr678","type":"fa-ui-ux","updated":"..."}
+└── fa_uiux.json       ← {"id":"pqr678","type":"fa_uiux","updated":"..."}
 ```
 
 **主Agent的职责**：
@@ -137,6 +132,30 @@ Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QP
 
 ---
 
+### 4.5. 预检风险注入（Phase 1a 启动前）
+
+PRD 质量预检发现的风险项需要在启动子Agent 前注入到 Task prompt 中。
+
+**注入流程**：
+
+1. **收集风险**：汇总 Step 0 PRD 质量预检中所有标为"有风险"的维度列表
+2. **构建注入文本**：
+   - 有风险：`⚠️ PRD 在 {维度1}、{维度2} 方面信息不完整，请基于行业通识合理假设并标注`
+   - 无风险：空字符串 `""`
+3. **替换占位符**：将 Phase 1a 各 Task prompt 中的 `{PRD质量预检风险项，如有}` 替换为上述文本
+
+```
+示例（有风险时）：
+prompt: "阶段：初稿 v1\n...\n## 项目约束\n团队技能：JS/TS全栈\n⚠️ PRD 在 安全架构 方面信息不完整...\n\n产出 tech-stack.md 初稿..."
+
+示例（无风险时）：
+prompt: "阶段：初稿 v1\n...\n## 项目约束\n团队技能：JS/TS全栈\n\n产出 tech-stack.md 初稿..."
+```
+
+**日志写入**：`- {yymmdd hhmm} PRD 风险注入：{注入的维度列表 / 无风险}`
+
+---
+
 ### 5. Phase 1a：并行初稿（v1）
 
 **触发条件**：Step 0 完成。
@@ -153,40 +172,42 @@ skill(name: "fa_techstack")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs/fa_techstack\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 tech-stack.md 初稿。要求：每个技术选型必须列出备选方案对比（至少 2 个备选），给出推荐理由和取舍。完成后只返回文件路径。")
+  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 tech-stack.md 初稿。要求：每个技术选型必须列出备选方案对比（至少 2 个备选），给出推荐理由和取舍。完成后只返回文件路径。")
 
 skill(name: "fa_data")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs/fa_data\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 data-architecture.md 初稿。\n\n精度要求（非建议，必须产出）：\n1. 每个实体列出完整字段清单（字段名、类型、约束、默认值、注释）\n2. 索引策略（主键/唯一/普通/联合索引，含索引选择理由）\n3. 分库分表策略（如需要）\n4. 迁移脚本模板（liquibase/flyway 格式）\n5. 存储策略（主库/缓存/对象存储/搜索引擎，含 Key 设计/TTL/一致性策略）\n6. 完整实体关系图\n完成后只返回文件路径。")
+  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 data-architecture.md 初稿。\n\n精度要求（非建议，必须产出）：\n1. 每个实体列出完整字段清单（字段名、类型、约束、默认值、注释）\n2. 索引策略（主键/唯一/普通/联合索引，含索引选择理由）\n3. 分库分表策略（如需要）\n4. 迁移脚本模板（liquibase/flyway 格式）\n5. 存储策略（主库/缓存/对象存储/搜索引擎，含 Key 设计/TTL/一致性策略）\n6. 完整实体关系图\n完成后只返回文件路径。")
 
 skill(name: "fa_infra")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs/fa_infra\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 infra-architecture.md 初稿。\n\n精度要求：\n1. 部署拓扑图（节点/网络/存储）\n2. CI/CD 流水线设计（含阶段定义和触发条件）\n3. 环境规划（dev/staging/prod 完整配置矩阵）\n4. docker-compose.yml 骨架（服务/端口/卷/网络定义）\n5. 监控和日志方案（指标/告警规则/日志收集）\n6. 容量规划（CPU/内存/存储/带宽估算）\n完成后只返回文件路径。")
+  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 infra-architecture.md 初稿。\n\n精度要求：\n1. 部署拓扑图（节点/网络/存储）\n2. CI/CD 流水线设计（含阶段定义和触发条件）\n3. 环境规划（dev/staging/prod 完整配置矩阵）\n4. docker-compose.yml 骨架（服务/端口/卷/网络定义）\n5. 监控和日志方案（指标/告警规则/日志收集）\n6. 容量规划（CPU/内存/存储/带宽估算）\n完成后只返回文件路径。")
 
 skill(name: "fa_security")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs/fa_security\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 security-architecture.md 初稿。要求：包含威胁建模、认证授权方案、数据安全策略、安全审计设计。完成后只返回文件路径。")
+  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 security-architecture.md 初稿。要求：包含威胁建模、认证授权方案、数据安全策略、安全审计设计。完成后只返回文件路径。")
 
 skill(name: "fa_api_design")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs/fa_api_design\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 api-contract.md 初稿。\n\n精度要求（非建议，必须产出）：\n1. 每个端点：Method + Path + 请求字段（名/类型/必填/校验规则/示例值）\n2. 每个端点：响应字段（名/类型/含义/示例值）、错误码（HTTP状态码+业务码+message）\n3. 枚举字段列出全部合法值\n4. DTO/Entity 映射对照（API 字段 ↔ 数据库字段）\n5. 认证/鉴权要求标注（每个端点标注需要的角色/权限）\n6. 分页/排序/筛选参数规范化\n7. OpenAPI 3.0 YAML 骨架（info/paths/components 三节点完整）\n完成后只返回文件路径。")
+  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 api-contract.md 初稿。\n\n精度要求（非建议，必须产出）：\n1. 每个端点：Method + Path + 请求字段（名/类型/必填/校验规则/示例值）\n2. 每个端点：响应字段（名/类型/含义/示例值）、错误码（HTTP状态码+业务码+message）\n3. 枚举字段列出全部合法值\n4. DTO/Entity 映射对照（API 字段 ↔ 数据库字段）\n5. 认证/鉴权要求标注（每个端点标注需要的角色/权限）\n6. 分页/排序/筛选参数规范化\n7. OpenAPI 3.0 YAML 骨架（info/paths/components 三节点完整）\n完成后只返回文件路径。")
 
-skill(name: "fa-ui-ux")
+skill(name: "fa_uiux")
 Task(
   subagent_type: "general",
   run_in_background: true,
-  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs/fa_uiux\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 ui-ux-architecture.md 初稿。\n\n精度要求（非建议，必须产出）：\n1. 完整页面/路由树（页面名、路由路径、页面组件、权限要求）\n2. 组件树架构（Layout → Page → Section → Component 层级，标明可复用组件）\n3. 页面布局规格（每页面列出板块分区、响应式断点策略）\n4. 设计 Token（颜色/字体/间距/圆角/阴影 规范表）\n5. 页面状态覆盖（每页面列出 loading/empty/error/edge-case 态）\n6. 交互流图（核心用户旅程的页面跳转流程图）\n7. API-页面映射表（每页面列出调用的 API 端点）\n完成后只返回文件路径。")
+  prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{团队技能/规模/预算/约束等Step 0收集的信息}\n{PRD质量预检风险项，如有}\n\n产出 ui-ux-architecture.md 初稿。\n\n精度要求（非建议，必须产出）：\n1. 完整页面/路由树（页面名、路由路径、页面组件、权限要求）\n2. 组件树架构（Layout → Page → Section → Component 层级，标明可复用组件）\n3. 页面布局规格（每页面列出板块分区、响应式断点策略）\n4. 设计 Token（颜色/字体/间距/圆角/阴影 规范表）\n5. 页面状态覆盖（每页面列出 loading/empty/error/edge-case 态）\n6. 交互流图（核心用户旅程的页面跳转流程图）\n7. API-页面映射表（每页面列出调用的 API 端点）\n完成后只返回文件路径。")
 ```
 
 > **并发 = 6**：6 个分析Agent同时启动，无依赖关系。
+
+> **超时策略**：每个子Agent 最长等待 300s。超时后额外等待 120s（合计最长 7 分钟）；仍无响应则标记该Agent为"超时"→ 记录日志 → 跳过该维度（记为 ⚠️ 降级通过，在 architecture-design.md 中标注缺失维度）。不阻塞其他维度，继续推进。
 
 #### 等待全部完成
 
@@ -200,9 +221,18 @@ Task(
 - {yymmdd hhmm} data v1 完成，产出：{路径} (FA_ID: {FA_ID_2})
 - {yymmdd hhmm} infra v1 完成，产出：{路径} (FA_ID: {FA_ID_3})
 - {yymmdd hhmm} security v1 完成，产出：{路径} (FA_ID: {FA_ID_4})
-- {yymmdd hhmm} api-design v1 完成，产出：{路径} (FA_ID: {FA_ID_5})
-- {yymmdd hhmm} ui-ux v1 完成，产出：{路径} (FA_ID: {FA_ID_6})
+- {yymmdd hhmm} api_design v1 完成，产出：{路径} (FA_ID: {FA_ID_5})
+- {yymmdd hhmm} ui_ux v1 完成，产出：{路径} (FA_ID: {FA_ID_6})
 ```
+
+#### 经验积累
+
+每个子Agent 完成初稿后，须在 `{PROJECT_ROOT}/outputs/` 下写入 `lessons-learned.md`，每条记录格式：
+```
+- {yymmdd} {维度名}：{经验描述}
+```
+
+主Agent 在 Phase 5 汇总时将各维度的经验合并到 `{PROJECT_ROOT}/outputs/lessons-learned.md`，供下游阶段参考。
 
 ---
 
@@ -262,7 +292,7 @@ Task(
   subagent_type: "general",
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 api-contract.md v1（同上 8 项检查），优化后产出 v2 覆盖原文件。完成后只返回文件路径。")
 
-skill(name: "fa-ui-ux")
+skill(name: "fa_uiux")
 Task(
   task_id: "{FA_ID_6}",
   subagent_type: "general",
@@ -290,12 +320,12 @@ Task(
 
 **只读每个文件中的"跨维度依赖"章节，用 Grep 提取**：
 ```
-Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md")
-Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_data/data-architecture.md")
-Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_infra/infra-architecture.md")
-Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_security/security-architecture.md")
-Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_api_design/api-contract.md")
-Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/tech-stack.md")
+Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/data-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/infra-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/security-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/api-contract.md")
+Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/ui-ux-architecture.md")
 ```
 
 #### 检查清单（全覆盖，~35 项）
@@ -337,6 +367,8 @@ Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_uiux/ui-ux-a
 | 33 | 前端部署配套 | infra → ui-ux | ui-ux 设计了 15 个页面，infra 未配置前端托管 |
 | 34 | 设计 Token 与技术栈一致 | ui-ux → techstack | ui-ux 用 rem 单位，techstack 推的 UI 库用 px |
 | 35 | 响应式断点与框架兼容 | ui-ux → infra | ui-ux 有桌面/平板/手机三套布局，infra CDN 未考虑自适应 |
+| 36 | 页面数据字段覆盖 | ui-ux → data | ui-ux 页面展示"订单统计"，data 无对应聚合查询或表设计 |
+| 37 | API 设计风格一致 | api-design → techstack | api-design 用了 GraphQL 风格，techstack 声明 RESTful |
 
 #### 修正循环（最多 3 轮，全自动，禁止询问）
 
@@ -365,7 +397,10 @@ Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/fa_uiux/ui-ux-a
 **第 3 轮（如仍有冲突）：**
 
 8. 重复步骤 1-4
-9. 仍有冲突 → 在最终文档标注"未解决冲突"，继续进入 Phase 3 深度评审，不阻塞
+9. 仍有冲突 → 记录到 architecture-design.md：
+   - 第 9 章 ADR：记录每个冲突维度的立场分歧（各方方案 + 论证 + 未达成一致的原因）
+   - 第 11 章 遗留问题：标注"第{N}轮未解决的冲突"及影响范围
+   - 继续进入 Phase 3 深度评审，不阻塞
 
 #### 需求覆盖度检查（一致性通过后执行）
 
@@ -473,7 +508,7 @@ Task(
   subagent_type: "general",
   prompt: "深度评审阶段（最终 v3）。同上 6 项深度要求强化 api-contract.md。\nPhase 2 遗漏项（如有）：{该维度的遗漏项}\n完成后只返回文件路径。")
 
-skill(name: "fa-ui-ux")
+skill(name: "fa_uiux")
 Task(
   task_id: "{FA_ID_6}",
   subagent_type: "general",
@@ -528,11 +563,11 @@ Phase 3 深度评审完成后，主Agent整合 6 份 v3 文档为最终架构设
 
 | # | 制品文件 | 来源文档 | 提取内容 | 存放路径 |
 |---|---------|---------|---------|---------|
-| A1 | `openapi.yaml` | api-contract.md | 从 OpenAPI 3.0 YAML 骨架章节提取完整规格 | `{PROJECT_ROOT}/outputs/artifacts/openapi.yaml` |
-| A2 | `schema.sql` | data-architecture.md | 从迁移脚本模板章节提取完整 DDL | `{PROJECT_ROOT}/outputs/artifacts/schema.sql` |
-| A3 | `docker-compose.yml` | infra-architecture.md | 从 docker-compose 骨架章节提取完整配置 | `{PROJECT_ROOT}/outputs/artifacts/docker-compose.yml` |
-| A4 | `auth-config.yaml` | security-architecture.md | 从认证方案章节提取 JWT/OAuth 配置模板 | `{PROJECT_ROOT}/outputs/artifacts/auth-config.yaml` |
-| A5 | `routes.ts` | ui-ux-architecture.md | 从路由树章节提取前端路由配置骨架 | `{PROJECT_ROOT}/outputs/artifacts/routes.ts` |
+| A1 | `openapi.yaml` | api-contract.md | 从 OpenAPI 3.0 YAML 骨架章节提取完整规格 | `{ARCH_ROOT}/outputs/artifacts/openapi.yaml` |
+| A2 | `schema.sql` | data-architecture.md | 从迁移脚本模板章节提取完整 DDL | `{ARCH_ROOT}/outputs/artifacts/schema.sql` |
+| A3 | `docker-compose.yml` | infra-architecture.md | 从 docker-compose 骨架章节提取完整配置 | `{ARCH_ROOT}/outputs/artifacts/docker-compose.yml` |
+| A4 | `auth-config.yaml` | security-architecture.md | 从认证方案章节提取 JWT/OAuth 配置模板 | `{ARCH_ROOT}/outputs/artifacts/auth-config.yaml` |
+| A5 | `routes.ts` | ui-ux-architecture.md | 从路由树章节提取前端路由配置骨架 | `{ARCH_ROOT}/outputs/artifacts/routes.ts` |
 
 **提取方式**：
 - 用 Grep 定位各文档中的对应章节（如 api-contract.md 中的 `## OpenAPI 3.0 规格`）
@@ -550,56 +585,56 @@ architecture-design.md 第 11 章更新为：
 frontend/ 主智能体输入：
   REQUIREMENT_FILE: {PRD 路径}
   PROJECT_ROOT: {前端项目路径}
-  TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-  CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-  SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-  UI_UX_FILE: {PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md
-  IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
-  # 额外制品：{PROJECT_ROOT}/outputs/artifacts/openapi.yaml（类型生成源）
-  # 额外制品：{PROJECT_ROOT}/outputs/artifacts/routes.ts（路由骨架）
+  TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+  CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+  SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+  UI_UX_FILE: {ARCH_ROOT}/outputs/ui-ux-architecture.md
+  IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
+  # 额外制品：{ARCH_ROOT}/outputs/artifacts/openapi.yaml（类型生成源）
+  # 额外制品：{ARCH_ROOT}/outputs/artifacts/routes.ts（路由骨架）
 
 backend/ 主智能体输入：
   REQUIREMENT_FILE: {PRD 路径}
   PROJECT_ROOT: {后端项目路径}
-  TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-  DATA_ARCHITECTURE_FILE: {PROJECT_ROOT}/outputs/fa_data/data-architecture.md
-  CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-  SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-  IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
-  # 额外制品：{PROJECT_ROOT}/outputs/artifacts/schema.sql（DDL 建表）
-  # 额外制品：{PROJECT_ROOT}/outputs/artifacts/openapi.yaml（DTO 生成源）
-  # 额外制品：{PROJECT_ROOT}/outputs/artifacts/auth-config.yaml（认证配置）
+  TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+  DATA_ARCHITECTURE_FILE: {ARCH_ROOT}/outputs/data-architecture.md
+  CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+  SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+  IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
+  # 额外制品：{ARCH_ROOT}/outputs/artifacts/schema.sql（DDL 建表）
+  # 额外制品：{ARCH_ROOT}/outputs/artifacts/openapi.yaml（DTO 生成源）
+  # 额外制品：{ARCH_ROOT}/outputs/artifacts/auth-config.yaml（认证配置）
 
 flutter/ 主智能体输入：
   REQUIREMENT_FILE: {PRD 路径}
   PROJECT_ROOT: {Flutter 项目路径}
-  TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-  CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-  SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-  UI_UX_FILE: {PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md
-  IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+  TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+  CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+  SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+  UI_UX_FILE: {ARCH_ROOT}/outputs/ui-ux-architecture.md
+  IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 
 blockchain/ 主智能体输入：
   REQUIREMENT_FILE: {PRD 路径}
   PROJECT_ROOT: {区块链项目路径}
-  TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-  DATA_ARCHITECTURE_FILE: {PROJECT_ROOT}/outputs/fa_data/data-architecture.md
-  CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-  SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-  IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+  TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+  DATA_ARCHITECTURE_FILE: {ARCH_ROOT}/outputs/data-architecture.md
+  CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+  SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+  IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 
 fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后再启动）：
   FRONTEND_ROOT: {前端项目路径}
   BACKEND_ROOT: {后端项目路径}
   FLUTTER_ROOT: {Flutter 项目路径}（有 Flutter 项目时使用）
   BLOCKCHAIN_ROOT: {区块链项目路径}（有区块链项目时使用）
-  UI_UX_FILE: {PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md
-  CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-  TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-  DATA_ARCHITECTURE_FILE: {PROJECT_ROOT}/outputs/fa_data/data-architecture.md
-  INFRA_FILE: {PROJECT_ROOT}/outputs/fa_infra/infra-architecture.md
-  SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-  IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+  UI_UX_FILE: {ARCH_ROOT}/outputs/ui-ux-architecture.md
+  CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+  TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+  DATA_ARCHITECTURE_FILE: {ARCH_ROOT}/outputs/data-architecture.md
+  INFRA_FILE: {ARCH_ROOT}/outputs/infra-architecture.md
+  SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+  IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 ```
 
 **日志写入**：
@@ -613,7 +648,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 
 ### 10. Phase 4.5：实施路线图
 
-架构文档产出后，**主Agent基于各子Agent的分析产出分阶段实施路线图**，写入 `{PROJECT_ROOT}/outputs/implementation-roadmap.md`。
+架构文档产出后，**主Agent基于各子Agent的分析产出分阶段实施路线图**，写入 `{ARCH_ROOT}/outputs/implementation-roadmap.md`。
 
 #### 路线图设计原则
 
@@ -659,9 +694,15 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 - {从 architecture-design.md 第12章摘取}
 ```
 
+> **占位符来源说明**：`{核心实体1}`、`{核心页面1}` 等占位符的值从各子Agent 的 v3 文档提取——
+> - 实体名：从 `data-architecture.md` 的实体清单中选取 P0 优先级的核心实体
+> - 页面名：从 `ui-ux-architecture.md` 的页面路由树中选取核心页面
+> - 优先级按子Agent 标注的 MVP/P0 标记排序；未标注时按文档中出现顺序排列
+> - 依赖关系由主Agent 根据 Phase 2 一致性检查中的跨维度依赖矩阵推导
+
 **日志写入**：
 ```
-- {yymmdd hhmm} 实施路线图产出：{PROJECT_ROOT}/outputs/implementation-roadmap.md
+- {yymmdd hhmm} 实施路线图产出：{ARCH_ROOT}/outputs/implementation-roadmap.md
 - {yymmdd hhmm} 路线图：{N} 个 Phase，{M} 个任务
 ```
 
@@ -686,7 +727,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 
 共 {N} 个架构决策，{M} 个待确认项。
 详细文档：{PROJECT_ROOT}/outputs/architecture-design.md
-实施路线图：{PROJECT_ROOT}/outputs/implementation-roadmap.md
+实施路线图：{ARCH_ROOT}/outputs/implementation-roadmap.md
 可执行制品：{PROJECT_ROOT}/outputs/artifacts/ (openapi.yaml / schema.sql / docker-compose.yml / auth-config.yaml / routes.ts)
 ```
 
@@ -699,11 +740,11 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > 使用 /frontend/main_agent_prompt_vue.md
 > PROJECT_ROOT: {前端项目路径}
 > REQUIREMENT_FILE: {PRD 路径}
-> TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-> CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-> SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-> UI_UX_FILE: {PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md
-> IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+> TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+> CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+> SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+> UI_UX_FILE: {ARCH_ROOT}/outputs/ui-ux-architecture.md
+> IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 > ```
 >
 > **第 1 步（可并行）— 启动后端：**
@@ -711,11 +752,11 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > 使用 /backend/main_agent_prompt.md
 > PROJECT_ROOT: {后端项目路径}
 > REQUIREMENT_FILE: {PRD 路径}
-> TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-> DATA_ARCHITECTURE_FILE: {PROJECT_ROOT}/outputs/fa_data/data-architecture.md
-> CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-> SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-> IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+> TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+> DATA_ARCHITECTURE_FILE: {ARCH_ROOT}/outputs/data-architecture.md
+> CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+> SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+> IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 > ```
 >
 > **第 1 步（可并行）— 如需跨端应用：**
@@ -723,11 +764,11 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > 使用 /flutter/main_agent_prompt_flutter.md
 > PROJECT_ROOT: {Flutter 项目路径}
 > REQUIREMENT_FILE: {PRD 路径}
-> TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-> CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-> SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-> UI_UX_FILE: {PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md
-> IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+> TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+> CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+> SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+> UI_UX_FILE: {ARCH_ROOT}/outputs/ui-ux-architecture.md
+> IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 > ```
 >
 > **第 1 步（可并行）— 如需区块链智能合约：**
@@ -735,11 +776,11 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > 使用 /blockchain/main_agent_prompt_blockchain.md
 > PROJECT_ROOT: {区块链项目路径}
 > REQUIREMENT_FILE: {PRD 路径}
-> TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-> DATA_ARCHITECTURE_FILE: {PROJECT_ROOT}/outputs/fa_data/data-architecture.md
-> CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-> SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-> IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+> TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+> DATA_ARCHITECTURE_FILE: {ARCH_ROOT}/outputs/data-architecture.md
+> CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+> SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+> IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 > ```
 >
 > **第 2 步（串行，需等前端+后端完成）— 启动前后端联调：**
@@ -749,13 +790,13 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > BACKEND_ROOT: {后端项目路径}
 > FLUTTER_ROOT: {Flutter 项目路径}（如有）
 > BLOCKCHAIN_ROOT: {区块链项目路径}（如有）
-> UI_UX_FILE: {PROJECT_ROOT}/outputs/fa_uiux/ui-ux-architecture.md
-> CONTRACT_FILE: {PROJECT_ROOT}/outputs/fa_api_design/api-contract.md
-> TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-> DATA_ARCHITECTURE_FILE: {PROJECT_ROOT}/outputs/fa_data/data-architecture.md
-> INFRA_FILE: {PROJECT_ROOT}/outputs/fa_infra/infra-architecture.md
-> SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-> IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+> UI_UX_FILE: {ARCH_ROOT}/outputs/ui-ux-architecture.md
+> CONTRACT_FILE: {ARCH_ROOT}/outputs/api-contract.md
+> TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+> DATA_ARCHITECTURE_FILE: {ARCH_ROOT}/outputs/data-architecture.md
+> INFRA_FILE: {ARCH_ROOT}/outputs/infra-architecture.md
+> SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+> IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 > FRONTEND_LESSONS: {前端项目路径}/lessons-learned.md（如有）
 > BACKEND_LESSONS: {后端项目路径}/lessons-learned.md（如有）
 > ```
@@ -764,12 +805,15 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > **第 3 步（串行，需等 fullstack/ 完成）— 启动生产部署：**
 > ```
 > 使用 /deploy/main_agent_prompt_deploy.md
-> TECH_STACK_FILE: {PROJECT_ROOT}/outputs/fa_techstack/tech-stack.md
-> INFRA_FILE: {PROJECT_ROOT}/outputs/fa_infra/infra-architecture.md
-> SECURITY_FILE: {PROJECT_ROOT}/outputs/fa_security/security-architecture.md
-> IMPLEMENTATION_ROADMAP_FILE: {PROJECT_ROOT}/outputs/implementation-roadmap.md
+> TECH_STACK_FILE: {ARCH_ROOT}/outputs/tech-stack.md
+> INFRA_FILE: {ARCH_ROOT}/outputs/infra-architecture.md
+> SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
+> IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
 > FRONTEND_ROOT: {前端项目路径}
 > BACKEND_ROOT: {后端项目路径}
+> FLUTTER_ROOT: {Flutter 项目路径}（如有 Flutter 项目）
+> BLOCKCHAIN_ROOT: {区块链项目路径}（如有区块链项目）
+> BLOCKCHAIN_ABI_DIR: {区块链项目路径}/artifacts/contracts/（如有区块链项目）
 > DEPLOY_ROOT: {部署方案目录}
 > ```
 
@@ -830,7 +874,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 - 260506 1522 架构设计文档产出：{PROJECT_ROOT}/outputs/architecture-design.md
 - 260506 1522 子文档：tech-stack.md / data-architecture.md / infra-architecture.md / security-architecture.md / api-contract.md / ui-ux-architecture.md
 - 260506 1525 制品产出：openapi.yaml / schema.sql / docker-compose.yml / auth-config.yaml / routes.ts（跳过 {N} 个）
-- 260506 1510 实施路线图产出：{PROJECT_ROOT}/outputs/implementation-roadmap.md (Phase 4.5)
+- 260506 1510 实施路线图产出：{ARCH_ROOT}/outputs/implementation-roadmap.md (Phase 4.5)
 - 260506 1510 路线图：4 个 Phase，12 个任务
 
 - 260506 1515 Phase 5：产出汇总完成
@@ -855,7 +899,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 12. **一致性检查只读"跨维度依赖"章节**，用 Grep 提取，不读完整文档
 13. **需求覆盖度检查只报遗漏、不强制修改** — 遗漏项反馈给 Phase 3 深度评审补充
 14. **架构决策记录（ADR）在 Phase 3 深度评审中由各子Agent补全**
-15. **五个维度完成后一次性汇报进度，不逐个打断**
+15. **六个维度完成后一次性汇报进度，不逐个打断**
 16. **最终文档由主Agent整合**，不另建子Agent
 17. **实施路线图在整合后自动产出**，基于各子Agent的分析推断依赖关系
 18. **下游交接指南写入 architecture-design.md**，明确各下游系统的输入
