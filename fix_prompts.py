@@ -47,16 +47,27 @@ def fix_bash_script(content):
     content = pattern.sub('', content)
 
     text_pattern = re.compile(
-        r'> \*\*超时应对策略\*\*.*?(?=\n\n|\n\*\*)', re.DOTALL)
+        r'> \*\*(?:超时应对策略|Timeout strategy)\*\*.*?(?=\n\n|\n\*\*)', re.DOTALL)
 
-    new_text = (
+    new_text_cn = (
         '> **超时应对策略**：如果 TaskOutput 超时（300s）导致你未能直接收到返回结果，'
         '请使用你的 `Read` 或 `Grep` 工具去读取 `test-reports/` 目录下对应的 JSON 报告文件'
         '（仅读取 JSON 中的 `verdict` 字段来提取判定）。**严禁使用 Bash 命令去解析文件**，'
         '也**不要**读取 markdown 格式的全文报告以免污染上下文。'
         '直接将报告路径传给修复 Agent 让它自己读全文。')
 
-    content = text_pattern.sub(new_text, content)
+    new_text_en = (
+        '> **Timeout strategy**: If TaskOutput times out (300s) causing you to not directly receive the result, '
+        'use your `Read` tool to read the corresponding JSON report file in the test-reports/ directory '
+        '(only read the `verdict` field from the JSON to extract the verdict). '
+        '**Strictly prohibit using Bash commands to parse files**, and **do not** '
+        'read the full markdown report to avoid context pollution. '
+        'Pass the report path directly to the fix agent so it can read the full report itself.')
+
+    if re.search(r'\*\*超时应对策略\*\*', content):
+        content = text_pattern.sub(new_text_cn, content)
+    elif re.search(r'\*\*Timeout strategy\*\*', content):
+        content = text_pattern.sub(new_text_en, content)
     return content
 
 

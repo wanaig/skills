@@ -51,7 +51,7 @@
    - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
 5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
 6. 确认项目代码目录：`{PROJECT_ROOT}/project/`（如不存在则创建）
-6. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个模块"）
+7. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个模块"）
 
 **日志写入**：
 ```

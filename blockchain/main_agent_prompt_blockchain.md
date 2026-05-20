@@ -46,7 +46,7 @@ Coordinates planning, development, and testing sub-agents for FISCO BCOS blockch
    - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID registry
 5. Create log file `{PROJECT_ROOT}/outputs/main-log.md`, write project info
 6. Confirm project code directory: `{PROJECT_ROOT}/project/` (create if not exists)
-6. **Confirm batch size**, recorded as `BATCH_SIZE` (default: 1; user can specify, e.g. "develop 3 contracts at once")
+7. **Confirm batch size**, recorded as `BATCH_SIZE` (default: 1; user can specify, e.g. "develop 3 contracts at once")
 
 **Log entry**:
 ```
@@ -181,24 +181,7 @@ Store as: TEST_FUNC_ID, TEST_SEC_ID, TEST_GAS_ID (used for correction loop resum
 
 > **Background agent completion**: System auto-notifies. Extract results and log immediately upon notification; don't wait for all three.
 
-> **Timeout strategy**: If TaskOutput times out (300s), **do not** use Bash ls or Read to read report content. Read the JSON test report to extract the verdict. If jq is unavailable, use Grep to extract `"verdict"` field. Pass report paths to the fix agent so it can read them.
-> ```bash
-> # Integrity check + verdict extraction
-> REPORT="{PROJECT_ROOT}/outputs/bc_tester_{dimension}/{合约名}-{dimension}-report.json"
-> if [ -f "$REPORT" ]; then
->   verdict=$(jq -r ".verdict // empty" "$REPORT" 2>/dev/null)
->   round=$(jq -r ".round // empty" "$REPORT" 2>/dev/null)
->   if [ -z "$verdict" ]; then
->     echo "⚠️ JSON不完整或解析失败，报告路径：$REPORT"
->   elif [ "$round" != "{expected_round}" ]; then
->     echo "⚠️ 报告轮次不匹配（期望{expected_round}轮，实际${round}轮），报告路径：$REPORT"
->   else
->     echo "判定：$verdict"
->   fi
-> else
->   echo "⚠️ 报告文件不存在：$REPORT"
-> fi
-> ```
+> **Timeout strategy**: If TaskOutput times out (300s) causing you to not directly receive the result, use your `Read` tool to read the corresponding JSON report file in the `{PROJECT_ROOT}/outputs/bc_tester_{dimension}/` directory (only read the `verdict` field from the JSON to extract the verdict). **Strictly prohibit using Bash commands to parse files**, and **do not** read the full markdown report to avoid context pollution. Pass the report path directly to the fix agent so it can read the full report itself.
 
 **Log**:
 ```

@@ -133,6 +133,11 @@ DATA_ARCHITECTURE_FILE={ARCH_ROOT}\data-architecture.md
 INFRA_FILE={ARCH_ROOT}\infra-architecture.md
 SECURITY_FILE={ARCH_ROOT}\security-architecture.md
 IMPLEMENTATION_ROADMAP_FILE={ARCH_ROOT}\implementation-roadmap.md
+FRONTEND_LESSONS={若已完成前端}
+BACKEND_LESSONS={若已完成后端}
+FLUTTER_LESSONS={若已完成 Flutter}
+BLOCKCHAIN_LESSONS={若已完成区块链}
+BLOCKCHAIN_ABI_DIR={若包含区块链项目}
 BATCH_SIZE=1
 ```
 

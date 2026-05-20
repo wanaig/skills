@@ -88,7 +88,7 @@ Spring Boot 后端API服务项目的主智能体（编排者），协调计划�
 ```text
 使用 Read 或 Grep 工具读取 {PROJECT_ROOT}/outputs/agent-registry/backend_dev.json 提取 id
 ```
-获取到 ID 后，必须记录在日志中。：
+获取到 ID 后，必须记录在日志中。
 ```
 Grep(pattern=""id": "", path="{PROJECT_ROOT}/outputs/agent-registry/backend_dev.json")
 ```

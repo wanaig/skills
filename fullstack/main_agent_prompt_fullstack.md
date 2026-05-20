@@ -312,9 +312,9 @@ Task(
 ```
 
 3. 向用户报告完成
-4. 输出本阶段经验摘要（读取 lessons-learned.md 提取 3-5 条最高频/最通用的经验，追加到输出消息中供下游阶段参考）
+4. 输出本阶段经验摘要（读取 fullstack-lessons-learned.md 提取 3-5 条最高频/最通用的经验，追加到输出消息中供下游阶段参考）
 5. **跨 Phase 交接提示**：联调全部完成后，向用户输出以下信息：
-    > 前后端联调已完成。前后端接口已对齐，共覆盖 {N} 个接口。已积累 {K} 条联调经验（见 {FRONTEND_ROOT}/outputs/fs_api_dev/lessons-learned.md）。如需启动生产部署，请使用 deploy/ 主智能体，参数如下：
+    > 前后端联调已完成。前后端接口已对齐，共覆盖 {N} 个接口。已积累 {K} 条联调经验（见 {FRONTEND_ROOT}/outputs/fs_api_dev/fullstack-lessons-learned.md）。如需启动生产部署，请使用 deploy/ 主智能体，参数如下：
     > - FRONTEND_ROOT: {FRONTEND_ROOT}/project
     > - BACKEND_ROOT: {BACKEND_ROOT}
     > - FLUTTER_ROOT: {FLUTTER_ROOT}/project（如有 Flutter 项目）

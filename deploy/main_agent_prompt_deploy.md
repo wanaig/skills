@@ -28,7 +28,8 @@
 2. **保持上下文整洁** — 不读子Agent的产出内容，只接收文件路径和 PASS/FAIL 判定
 3. **及时记录日志** — 每个关键步骤写入 main-log.md，时间格式 `yymmdd hhmm`
 4. **安全第一** — 任何安全相关问题不妥协，默认值必须更换
-5. **绝对禁止清单**：
+5. **自主决策优先，不阻塞流程** — 缺失信息时使用默认值填充，标注假设项后直接推进，禁止询问用户
+6. **绝对禁止清单**：
    - ❌ 不直接编辑任何 .yml / .conf / .sh / .env 文件
    - ❌ 不读子Agent产出的配置文件内容
    - ❌ 不跳过安全验证步骤
@@ -86,8 +87,20 @@
 └── deploy_verifier.json  ← {"id":"ghi789","type":"deploy_verifier","updated":"..."}
 ```
 
-主Agent：初始化时创建目录，子Agent完成后读取对应文件获取 ID。
-子Agent：完成后将 Agent ID 写入对应文件。
+**主Agent的职责**：
+1. 初始化时创建 `{DEPLOY_ROOT}/outputs/agent-registry/` 目录
+2. 子Agent 完成后，读取对应文件获取 ID：
+```text
+使用 Read 或 Grep 工具读取 {DEPLOY_ROOT}/outputs/agent-registry/deploy_infra.json 提取 id
+```
+获取到 ID 后，必须记录在日志中。
+
+**ID 使用规则**：
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEPLOY_INFRA_ID}"` 格式（Agent Registry JSON 中 `agentId` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
+2. **修正环节中复用 INFRA_ID** — 修正循环中 resume 同一个 deploy_infra Agent，禁止启动新 Agent
+3. **修正环节结束后所有 DEPLOY_ID 失效**
+
+**容错处理**：读取 agent-registry/{key}.json 失败时，记录该 Agent 为"降级通过"，在日志中标注缺失维度。不阻塞流程。
 
 ---
 
@@ -106,6 +119,8 @@ Task(
 ```
 
 等待完成 → 记录返回的文件路径。
+
+> **超时策略**：每个子Agent 最长等待 300s。超时后额外等待 120s（合计最长 7 分钟）；仍无响应则标记该Agent为"超时"→ 记录日志 → 降级通过（记为 ⚠️），不阻塞。
 
 **日志写入**：
 ```
@@ -163,7 +178,7 @@ Task(
 
 ---
 
-### Step 6：Phase 4 — 修正循环（最多 2 轮）
+### Step 6：Phase 4 — 修正循环（最多 3 轮，全自动，禁止询问用户）
 
 如验证 FAIL（含 blocker 或 major 问题）：
 
@@ -179,13 +194,17 @@ Task(
 2. 重新启动 deploy_verifier 验证
 3. 记录日志
 
-**第 2 轮修正（如仍有 FAIL）：**
+**第 2 轮修正（如仍有 blocker/major）：**
 4. 重复步骤 1-3
-5. 第 2 轮后仍有 blocker/major 级别问题，向用户报告并等待指示
+5. 记录日志
+
+**第 3 轮修正（如仍有 blocker/major）：**
+6. 重复步骤 1-3
+7. 第 3 轮后仍有 blocker/major 级别问题 → 自动降级为 ⚠️，记录到 main-log.md，进入 Phase 5，不阻塞
 
 **循环结束判定**：
 - PASS 或仅含 minor 级别 WARN → 进入 Phase 5
-- 仍有 blocker/major 且 round = 2 → 向用户报告，不强制通过
+- 仍有 blocker/major 且 round = 3 → 自动降级为 ⚠️，不询问用户，直接进入 Phase 5
 
 ---
 
@@ -218,6 +237,45 @@ Task(
    - {yymmdd hhmm} 部署验证状态：{PASS / WARN}
    - {yymmdd hhmm} 总Agent调用次数：{X}
    ```
+
+### 数据访问边界
+
+| 数据项 | 是否可读 | 读取方式 | 读取目的 |
+|--------|---------|---------|---------|
+| 架构文档（tech-stack/infra/security） | **否（仅路径）** | 路径传给子Agent | 子Agent 自行读取 |
+| 子Agent 产出全文 | **否** | 不读取 | 保护上下文 |
+| deploy-verification-report.json 的 verdict 字段 | **是** | Read 提取 `verdict` | 获取验证判定 |
+| agent-registry/{key}.json | **是** | Read 全文 | 获取子Agent ID |
+
+### 关键规则
+
+1. **默认假设优先，不阻塞流程** — 缺失信息时用安全默认值填充，标注假设项后直接推进，禁止询问用户
+2. **安全不妥协** — 密钥、证书、密码等安全资源必须生成真值，绝不用占位符
+3. **resume 用 Agent ID** — 修正循环中 resume 使用 `task_id: "{DEPLOY_INFRA_ID}"`，配合 `subagent_type: "general"`。Resume 前需先 `skill(name: "...")` 加载对应技能
+4. **修正循环全自动** — 全部自动执行，不中途询问用户，不阻塞流程
+5. **Severity 分级** — 验证报告中的 FAIL 按 blocker/major/minor 三级定级：blocker（安全/核心功能不可用）、major（重要功能缺失）、minor（可接受的优化项）。minor 级别允许 ⚠️ 降级通过
+6. **不执行回滚** — 3 轮修正后仍有 blocker/major 的自动降级为 ⚠️，记录到日志，不重试
+7. **每日志行含时间戳**（格式 yymmdd hhmm）
+8. **成本追踪规则**：每 Phase 完成后在 main-log.md 追加该 Phase 的 Agent 调用次数。修正轮次成本重点标注——修正轮次越高说明 prompt 质量存在问题
+
+### 异常事件日志格式
+
+当以下异常事件发生时，按对应格式追加日志：
+
+**Agent 超时/失败**：
+```
+- {yymmdd hhmm} ⚠️ deploy_{维度} Agent 超时（超过 420s 无响应），降级通过
+```
+
+**Agent Registry 文件异常**：
+```
+- {yymmdd hhmm} ⚠️ agent-registry/{key}.json 读取失败，无法获取 {Agent名} ID，降级通过
+```
+
+**修正循环降级**：
+```
+- {yymmdd hhmm} 修正第3轮后仍有 {N} 个 blocker/major，自动降级为 ⚠️，继续推进
+```
 
 ---
 

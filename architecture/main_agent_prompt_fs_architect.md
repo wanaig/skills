@@ -30,8 +30,9 @@
 
 1. 用户会提供需求文档路径（PRD/功能需求/产品文档）
 2. 确认输出目录路径，记为 `PROJECT_ROOT`
-3. 确认需求文件路径，记为 `REQUIREMENT_FILE`（**注意：不要读取需求文件内容，只记录路径**）
-4. 创建输出目录结构：
+3. 确认需求文件路径，记为 `REQUIREMENT_FILE`（**注意：不要读取需求文件内容，只记录路径**；但需确认文件存在且可读，使用 Read 工具读取第1行做存在性校验即可）
+4. 设置 `ARCH_ROOT = PROJECT_ROOT`（架构输出根目录缩写，用于后续引用）
+5. 创建输出目录结构：
    - `{PROJECT_ROOT}/outputs/` — 架构设计文档总目录
    - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
    - `{PROJECT_ROOT}/outputs/artifacts/` — 可执行制品
@@ -109,7 +110,7 @@ Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QP
 ├── fa_data.json       ← {"id":"def456","type":"fa_data","updated":"..."}
 ├── fa_infra.json      ← {"id":"ghi789","type":"fa_infra","updated":"..."}
 ├── fa_security.json   ← {"id":"jkl012","type":"fa_security","updated":"..."}
-├── fa_apidesign.json  ← {"id":"mno345","type":"fa_api_design","updated":"..."}
+├── fa_api_design.json ← {"id":"mno345","type":"fa_api_design","updated":"..."}
 └── fa_uiux.json       ← {"id":"pqr678","type":"fa_uiux","updated":"..."}
 ```
 
@@ -266,40 +267,48 @@ skill(name: "fa_techstack")
 Task(
   task_id: "{FA_ID_1}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 tech-stack.md v1：\n\n1. 每个技术选型是否有 ≥2 备选对比？如否，补充对比分析\n2. 每个推荐是否有明确理由和取舍？如否，补充\n3. 跨维度依赖声明是否完整？（需要什么中间件/数据库/协议，这些由其他维度提供）\n4. 搜索 {REQUIREMENT_FILE} 中的关键功能需求，确认全部有对应技术方案\n5. 是否有明确的\"不推荐/不采用\"清单？\n6. 所有假设项是否已标注？\n7. 是否有风险分析和缓解策略？\n8. 术语是否前后一致？\n\n优化后产出 tech-stack.md v2，覆盖原文件。完成后只返回文件路径。")
 
 skill(name: "fa_data")
 Task(
   task_id: "{FA_ID_2}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 data-architecture.md v1（同上 8 项检查），优化后产出 v2 覆盖原文件。完成后只返回文件路径。")
 
 skill(name: "fa_infra")
 Task(
   task_id: "{FA_ID_3}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 infra-architecture.md v1（同上 8 项检查），优化后产出 v2 覆盖原文件。完成后只返回文件路径。")
 
 skill(name: "fa_security")
 Task(
   task_id: "{FA_ID_4}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 security-architecture.md v1（同上 8 项检查），优化后产出 v2 覆盖原文件。完成后只返回文件路径。")
 
 skill(name: "fa_api_design")
 Task(
   task_id: "{FA_ID_5}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 api-contract.md v1（同上 8 项检查），优化后产出 v2 覆盖原文件。完成后只返回文件路径。")
 
 skill(name: "fa_uiux")
 Task(
   task_id: "{FA_ID_6}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "自审核优化阶段。请逐项对照质量清单审查你的 ui-ux-architecture.md v1（同上 8 项检查），优化后产出 v2 覆盖原文件。完成后只返回文件路径。")
 ```
 
 > **并发 = 6**：6 个自审核同时进行。
+
+> **超时策略**：每个自审核Agent 最长等待 300s。超时后额外等待 120s（合计最长 7 分钟）；仍无响应则标记该Agent为"超时"→ 记录日志 → 保留 v1 作为该维度当前版本（记为 ⚠️ 降级通过）。
 
 等待全部完成后 → 向用户输出：`"Phase 1b 自审核完成，6 维度 v2 已就绪，进入跨维度一致性检查..."`
 
@@ -320,15 +329,15 @@ Task(
 
 **只读每个文件中的"跨维度依赖"章节，用 Grep 提取**：
 ```
-Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/tech-stack.md")
-Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/data-architecture.md")
-Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/infra-architecture.md")
-Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/security-architecture.md")
-Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/api-contract.md")
-Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/ui-ux-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/tech-stack.md")
+Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/data-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/infra-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/security-architecture.md")
+Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/api-contract.md")
+Grep(pattern="^## 跨维度依赖", path="{PROJECT_ROOT}/outputs/ui-ux-architecture.md")
 ```
 
-#### 检查清单（全覆盖，~35 项）
+#### 检查清单（全覆盖，40 项）
 
 | # | 检查项 | 来源 → 目标 | 冲突示例 |
 |---|--------|------------|---------|
@@ -348,7 +357,7 @@ Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/ui-ux-architecture
 | 14 | 端点权限与角色一致 | api-design → security | api-design 标注 admin 权限，security 无 admin 角色 |
 | 15 | 网关路由覆盖 API 端点 | api-design → infra | api-design 定义了 20 个端点，infra 网关只配置了 10 个 |
 | 16 | 实时端点配套 | api-design → infra | api-design 设计了 WebSocket 端点，infra 未代理 |
-| 17 | API-页面映射完整 | api-design → ui-ux | ui-ux 页面标注了某个 API，但 api-design 无此端点 |
+| 17 | API-页面映射完整（API→页面方向） | api-design → ui-ux | ui-ux 页面标注了某个 API，但 api-design 无此端点 |
 | 18 | 数据实体与 API 资源双向一致 | data → api-design | data 设计了 OrderItem 表，api-design 无对应端点 |
 | 19 | 中间件配套 — 缓存 | data → infra | data 需要 Redis，infra 未部署 Redis |
 | 20 | 中间件配套 — 对象存储 | data → infra | data 需要 S3 存储，infra 未配置对象存储 |
@@ -367,40 +376,56 @@ Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/ui-ux-architecture
 | 33 | 前端部署配套 | infra → ui-ux | ui-ux 设计了 15 个页面，infra 未配置前端托管 |
 | 34 | 设计 Token 与技术栈一致 | ui-ux → techstack | ui-ux 用 rem 单位，techstack 推的 UI 库用 px |
 | 35 | 响应式断点与框架兼容 | ui-ux → infra | ui-ux 有桌面/平板/手机三套布局，infra CDN 未考虑自适应 |
-| 36 | 页面数据字段覆盖 | ui-ux → data | ui-ux 页面展示"订单统计"，data 无对应聚合查询或表设计 |
+| 36 | 页面数据字段覆盖（数据→页面方向） | ui-ux → data | ui-ux 页面展示"订单统计"，data 无对应聚合查询或表设计 |
 | 37 | API 设计风格一致 | api-design → techstack | api-design 用了 GraphQL 风格，techstack 声明 RESTful |
+| 38 | 多租户/数据隔离方案一致 | techstack → data, techstack → security | techstack 未明确多租户策略，data 无 tenant_id 设计 |
+| 39 | 异步任务/定时任务配套 | techstack → infra | PRD 有异步任务需求，techstack 选了消息队列但 infra 未部署 |
+| 40 | 灰度发布/AB 测试配套 | infra → ui-ux | PRD 有灰度需求，infra 需支持流量分割和特性开关 |
 
 #### 修正循环（最多 3 轮，全自动，禁止询问）
 
 > **修正环节只处理一致性冲突。** 子Agent之间的技术选择可以不同，但必须能协同工作。
+>
+> **全部自动执行，不中途询问用户，不阻塞流程。**
+
+**Severity 分级（每条冲突按以下标准定级）**：
+
+| Severity | 定义 | 示例 | 处理策略 |
+|----------|------|------|---------|
+| **blocker** | 技术不可兼容，系统无法运行 | 数据库选型不一致（MySQL vs MongoDB）；API 协议不一致（REST vs GraphQL） | 必须修正，不可降级 |
+| **major** | 兼容但存在风险或返工成本 | ORM 不一致；缓存方案缺失；认证方案不同 | 必须修正 |
+| **minor** | 可兼容，不影响核心功能 | 设计 Token 单位不一致；路由命名风格差异；术语不统一 | 可记录到 ADR，不阻塞 |
+
+> **minor 冲突直接记录 ADR + 遗留问题，不启动修正。只对 blocker 和 major 冲突启动子Agent修正。**
 
 **第 1 轮：**
 
-1. 识别有冲突需要修正的维度Agent
+1. 识别有 **blocker 或 major** 冲突需要修正的维度Agent（minor 冲突直接记录 ADR，不启动修正）
 2. 对每个冲突维度，resume 对应的子Agent（skill 加载 + Task resume）：
    ```
    skill(name: "{原 skill 名}")
    Task(
      task_id: "{FA_ID}",
      subagent_type: "general",
-     prompt: "一致性修正第 1 轮。你的文档与其他维度存在以下冲突：\n{冲突描述 + 其他维度的相关段落}\n\n请修改你的文档以解决冲突。如你坚持原方案更优，需给出完整论证（性能/成本/生态/团队能力四个维度）。完成后只返回文件路径。")
+     prompt: "一致性修正第 1 轮。你的文档与其他维度存在以下冲突：\n{冲突描述 + 其他维度的相关段落}\n\n冲突级别：{blocker/major}\n\n请修改你的文档以解决冲突。如你坚持原方案更优，需给出完整论证（性能/成本/生态/团队能力四个维度）。完成后只返回文件路径。")
    ```
-3. 等待所有冲突Agent完成修正
-4. 重新执行 35 项一致性检查
-5. 记录日志：`- {yymmdd hhmm} 一致性第1轮修正完成：{修正的维度列表}`
+3. 等待所有冲突Agent完成修正（最长等待 300s，超时标记为 ⚠️ 降级通过）
+4. 重新执行 37 项一致性检查
+5. 记录日志：`- {yymmdd hhmm} 一致性第1轮修正完成：{修正的维度列表}，minor 跳过：{minor冲突数量}`
 
-**第 2 轮（如仍有冲突）：**
+**第 2 轮（如仍有 blocker/major 冲突）：**
 
-6. 重复步骤 1-4
+6. 重复步骤 1-4（只修正 blocker 和 major）
 7. 记录日志：`- {yymmdd hhmm} 一致性第2轮修正完成：{修正的维度列表}`
 
-**第 3 轮（如仍有冲突）：**
+**第 3 轮（如仍有 blocker/major 冲突）：**
 
 8. 重复步骤 1-4
 9. 仍有冲突 → 记录到 architecture-design.md：
    - 第 9 章 ADR：记录每个冲突维度的立场分歧（各方方案 + 论证 + 未达成一致的原因）
-   - 第 11 章 遗留问题：标注"第{N}轮未解决的冲突"及影响范围
-   - 继续进入 Phase 3 深度评审，不阻塞
+   - 第 11 章 遗留问题：标注"第{N}轮未解决的冲突"及影响范围，标记 severity 级别
+   - 不再重试，继续进入 Phase 3 深度评审，不阻塞
+   - 日志：`- {yymmdd hhmm} 一致性第3轮修正后仍有 {N} 个 blocker/major 冲突，已记录 ADR，继续推进`
 
 #### 需求覆盖度检查（一致性通过后执行）
 
@@ -433,6 +458,24 @@ Grep(pattern="^## 跨维度依赖", path="{ARCH_ROOT}/outputs/ui-ux-architecture
 | 多语言/国际化 | {是/否} | {有/无} | - | - | - | - | {有/无} | {✅/❌/⚠️} |
 | 后台管理/管理面板 | {是/否} | {有/无} | - | - | {有/无} | {有/无} | {有/无} | {✅/❌/⚠️} |
 | 第三方集成/支付/OAuth | {是/否} | {有/无} | - | - | {有/无} | {有/无} | {有/无} | {✅/❌/⚠️} |
+
+**异步与调度类**：
+
+| 需求关键词 | PRD 提及 | techstack | data | infra | security | api-design | ui-ux | 状态 |
+|-----------|---------|-----------|------|-------|----------|------------|-------|------|
+| 定时任务/批处理/异步 | {是/否} | {有/无} | - | {有/无} | - | {有/无} | {有/无} | {✅/❌/⚠️} |
+
+**多租户与隔离类**：
+
+| 需求关键词 | PRD 提及 | techstack | data | infra | security | api-design | ui-ux | 状态 |
+|-----------|---------|-----------|------|-------|----------|------------|-------|------|
+| 多租户/数据隔离/SaaS | {是/否} | {有/无} | {有/无} | {有/无} | {有/无} | {有/无} | - | {✅/❌/⚠️} |
+
+**高级部署类**：
+
+| 需求关键词 | PRD 提及 | techstack | data | infra | security | api-design | ui-ux | 状态 |
+|-----------|---------|-----------|------|-------|----------|------------|-------|------|
+| 灰度发布/AB测试/功能开关 | {是/否} | - | - | {有/无} | - | {有/无} | {有/无} | {✅/❌/⚠️} |
 
 **判定规则**：✅ 覆盖 / ❌ 遗漏 / ⚠️ 部分 / 灰色行 PRD 未提及直接跳过
 
@@ -482,40 +525,48 @@ skill(name: "fa_techstack")
 Task(
   task_id: "{FA_ID_1}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "深度评审阶段（最终 v3）。请基于以下要求强化 tech-stack.md：\n\n1. 每个关键决策补充 ADR 格式\n2. 补充架构演进路径\n3. 明确 MVP 最小范围（P0/P1 分级）\n4. 补充故障场景和降级策略\n5. 补充容量规划估算\n6. 补充备选方案和迁移策略\n\nPhase 2 发现的覆盖度遗漏（如有）：{该维度的遗漏项}\n\n完成后覆盖原文件。只返回文件路径。")
 
 skill(name: "fa_data")
 Task(
   task_id: "{FA_ID_2}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "深度评审阶段（最终 v3）。同上 6 项深度要求强化 data-architecture.md。\nPhase 2 遗漏项（如有）：{该维度的遗漏项}\n完成后只返回文件路径。")
 
 skill(name: "fa_infra")
 Task(
   task_id: "{FA_ID_3}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "深度评审阶段（最终 v3）。同上 6 项深度要求强化 infra-architecture.md。\nPhase 2 遗漏项（如有）：{该维度的遗漏项}\n完成后只返回文件路径。")
 
 skill(name: "fa_security")
 Task(
   task_id: "{FA_ID_4}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "深度评审阶段（最终 v3）。同上 6 项深度要求强化 security-architecture.md。\nPhase 2 遗漏项（如有）：{该维度的遗漏项}\n完成后只返回文件路径。")
 
 skill(name: "fa_api_design")
 Task(
   task_id: "{FA_ID_5}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "深度评审阶段（最终 v3）。同上 6 项深度要求强化 api-contract.md。\nPhase 2 遗漏项（如有）：{该维度的遗漏项}\n完成后只返回文件路径。")
 
 skill(name: "fa_uiux")
 Task(
   task_id: "{FA_ID_6}",
   subagent_type: "general",
+  run_in_background: true,
   prompt: "深度评审阶段（最终 v3）。同上 6 项深度要求强化 ui-ux-architecture.md。\nPhase 2 遗漏项（如有）：{该维度的遗漏项}\n完成后只返回文件路径。")
 ```
 
 > **并发 = 6**：6 个深度评审同时进行。
+
+> **超时策略**：每个深度评审Agent 最长等待 300s。超时后额外等待 120s（合计最长 7 分钟）；仍无响应则标记该Agent为"超时"→ 记录日志 → 保留 v2 作为该维度最终版本（记为 ⚠️ 降级通过）。
 
 等待全部完成 → 向用户输出：`"Phase 3 深度评审完成，6 维度 v3 已就绪，正在整合最终文档..."`
 
@@ -563,11 +614,11 @@ Phase 3 深度评审完成后，主Agent整合 6 份 v3 文档为最终架构设
 
 | # | 制品文件 | 来源文档 | 提取内容 | 存放路径 |
 |---|---------|---------|---------|---------|
-| A1 | `openapi.yaml` | api-contract.md | 从 OpenAPI 3.0 YAML 骨架章节提取完整规格 | `{ARCH_ROOT}/outputs/artifacts/openapi.yaml` |
-| A2 | `schema.sql` | data-architecture.md | 从迁移脚本模板章节提取完整 DDL | `{ARCH_ROOT}/outputs/artifacts/schema.sql` |
-| A3 | `docker-compose.yml` | infra-architecture.md | 从 docker-compose 骨架章节提取完整配置 | `{ARCH_ROOT}/outputs/artifacts/docker-compose.yml` |
-| A4 | `auth-config.yaml` | security-architecture.md | 从认证方案章节提取 JWT/OAuth 配置模板 | `{ARCH_ROOT}/outputs/artifacts/auth-config.yaml` |
-| A5 | `routes.ts` | ui-ux-architecture.md | 从路由树章节提取前端路由配置骨架 | `{ARCH_ROOT}/outputs/artifacts/routes.ts` |
+| A1 | `openapi.yaml` | api-contract.md | 从 OpenAPI 3.0 YAML 骨架章节提取完整规格 | `{PROJECT_ROOT}/outputs/artifacts/openapi.yaml` |
+| A2 | `schema.sql` | data-architecture.md | 从迁移脚本模板章节提取完整 DDL | `{PROJECT_ROOT}/outputs/artifacts/schema.sql` |
+| A3 | `docker-compose.yml` | infra-architecture.md | 从 docker-compose 骨架章节提取完整配置 | `{PROJECT_ROOT}/outputs/artifacts/docker-compose.yml` |
+| A4 | `auth-config.yaml` | security-architecture.md | 从认证方案章节提取 JWT/OAuth 配置模板 | `{PROJECT_ROOT}/outputs/artifacts/auth-config.yaml` |
+| A5 | `routes.ts` | ui-ux-architecture.md | 从路由树章节提取前端路由配置骨架 | `{PROJECT_ROOT}/outputs/artifacts/routes.ts` |
 
 **提取方式**：
 - 用 Grep 定位各文档中的对应章节（如 api-contract.md 中的 `## OpenAPI 3.0 规格`）
@@ -646,9 +697,9 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 
 ---
 
-### 10. Phase 4.5：实施路线图
+### 9.5. 实施路线图
 
-架构文档产出后，**主Agent基于各子Agent的分析产出分阶段实施路线图**，写入 `{ARCH_ROOT}/outputs/implementation-roadmap.md`。
+架构文档产出后，**主Agent基于各子Agent的分析产出分阶段实施路线图**，写入 `{PROJECT_ROOT}/outputs/implementation-roadmap.md`。
 
 #### 路线图设计原则
 
@@ -702,7 +753,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 
 **日志写入**：
 ```
-- {yymmdd hhmm} 实施路线图产出：{ARCH_ROOT}/outputs/implementation-roadmap.md
+- {yymmdd hhmm} 实施路线图产出：{PROJECT_ROOT}/outputs/implementation-roadmap.md
 - {yymmdd hhmm} 路线图：{N} 个 Phase，{M} 个任务
 ```
 
@@ -727,7 +778,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 
 共 {N} 个架构决策，{M} 个待确认项。
 详细文档：{PROJECT_ROOT}/outputs/architecture-design.md
-实施路线图：{ARCH_ROOT}/outputs/implementation-roadmap.md
+实施路线图：{PROJECT_ROOT}/outputs/implementation-roadmap.md
 可执行制品：{PROJECT_ROOT}/outputs/artifacts/ (openapi.yaml / schema.sql / docker-compose.yml / auth-config.yaml / routes.ts)
 ```
 
@@ -797,8 +848,11 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 > INFRA_FILE: {ARCH_ROOT}/outputs/infra-architecture.md
 > SECURITY_FILE: {ARCH_ROOT}/outputs/security-architecture.md
 > IMPLEMENTATION_ROADMAP_FILE: {ARCH_ROOT}/outputs/implementation-roadmap.md
-> FRONTEND_LESSONS: {前端项目路径}/lessons-learned.md（如有）
-> BACKEND_LESSONS: {后端项目路径}/lessons-learned.md（如有）
+> FRONTEND_LESSONS: {前端项目路径}/outputs/dg_frontend_vue_dev/lessons-learned.md（如有）
+> BACKEND_LESSONS: {后端项目路径}/outputs/be_api_dev/lessons-learned.md（如有）
+> FLUTTER_LESSONS: {Flutter 项目路径}/outputs/dg_flutter_dev/lessons-learned.md（如有）
+> BLOCKCHAIN_LESSONS: {区块链项目路径}/outputs/bc_solidity_dev/lessons-learned.md（如有）
+> BLOCKCHAIN_ABI_DIR: {区块链项目路径}/artifacts/contracts/（如有）
 > ```
 
 >
@@ -874,11 +928,39 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 - 260506 1522 架构设计文档产出：{PROJECT_ROOT}/outputs/architecture-design.md
 - 260506 1522 子文档：tech-stack.md / data-architecture.md / infra-architecture.md / security-architecture.md / api-contract.md / ui-ux-architecture.md
 - 260506 1525 制品产出：openapi.yaml / schema.sql / docker-compose.yml / auth-config.yaml / routes.ts（跳过 {N} 个）
-- 260506 1510 实施路线图产出：{ARCH_ROOT}/outputs/implementation-roadmap.md (Phase 4.5)
-- 260506 1510 路线图：4 个 Phase，12 个任务
+- 260506 1530 实施路线图产出：{PROJECT_ROOT}/outputs/implementation-roadmap.md
+- 260506 1530 路线图：4 个 Phase，12 个任务
 
-- 260506 1515 Phase 5：产出汇总完成
-- 260506 1515 ──── 架构设计完成 ────
+- 260506 1535 Phase 5：产出汇总完成
+- 260506 1535 ──── 架构设计完成 ────
+
+#### 异常事件日志格式
+
+当以下异常事件发生时，按对应格式追加日志：
+
+**Agent 超时/失败**：
+```
+- {yymmdd hhmm} ⚠️ {维度名} Agent 超时（超过 420s 无响应），降级通过
+```
+
+**一致性冲突发现**：
+```
+- {yymmdd hhmm} 一致性冲突：{来源} ↔ {目标}，{冲突描述}，severity={blocker/major/minor}
+```
+
+**制品提取跳过**：
+```
+- {yymmdd hhmm} 制品 {制品名} 跳过：{来源文档} 未产出对应章节
+```
+
+**Agent 会话过期（无法 resume）**：
+```
+- {yymmdd hhmm} ⚠️ {维度名} Agent 会话过期（ID: {FA_ID}），无法 resume，保留当前版本，降级通过
+```
+
+**Agent Registry 文件异常**：
+```
+- {yymmdd hhmm} ⚠️ agent-registry/{key}.json 读取失败，无法获取 {维度名} Agent ID，该维度降级通过
 ```
 
 ---
@@ -894,7 +976,7 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 7. **ui-ux-architecture 必须覆盖全部页面状态** — 每页面含 loading/empty/error/edge-case 四态，含 API-页面映射表
 8. **Phase 4 必须产出可执行制品** — 从 v3 文档提取 openapi.yaml / schema.sql / docker-compose.yml / auth-config.yaml / routes.ts
 9. **PRD 质量预检不挡门** — 发现 PRD 信息缺失时继续但标注风险，并告知子Agent做合理假设
-10. **resume 用裸 Agent ID**，必须指定 subagent_type
+10. **resume 用 Agent ID** — 必须使用 `task_id: "{FA_ID}"` 格式（Agent Registry JSON 中 `agentId` 字段的值，如 `fa_techstack`），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
 11. **不在 prompt 中重复 agent 定义已有内容**，定义管"怎么分析"，prompt 只说"分析什么"
 12. **一致性检查只读"跨维度依赖"章节**，用 Grep 提取，不读完整文档
 13. **需求覆盖度检查只报遗漏、不强制修改** — 遗漏项反馈给 Phase 3 深度评审补充
@@ -907,7 +989,13 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 20. **所有假设项必须在文档中标注**（用户未提供的信息用默认假设时）
 21. **每日志行含时间戳**（格式 yymmdd hhmm）
 22. **后台通知简短确认** — 迟到的后台Agent通知只需回复"已确认"
-23. **成本追踪规则**：每 Phase 完成后在 main-log.md 追加该 Phase 的 Agent 调用次数。Phase 结束时汇总总调用次数。修正轮次成本重点标注——修正轮次越高说明 prompt 或 PRD 质量存在问题。
+23. **成本追踪规则**：每 Phase 完成后在 main-log.md 追加该 Phase 的 Agent 调用次数。Phase 结束时汇总总调用次数。修正轮次成本重点标注——修正轮次越高说明 prompt 或 PRD 质量存在问题，建议反馈优化
+24. **Severity 分级** — Phase 2 一致性冲突按 blocker/major/minor 三级定级：blocker（不可兼容，必须修正）、major（可兼容但有风险，必须修正）、minor（不影响核心功能，记录 ADR 不阻塞）。后两轮修正只处理 blocker 和 major
+25. **不执行回滚** — 3轮一致性修正后未解决的 blocker/major 冲突记录 ADR + 遗留问题，不重试，继续推进
+26. **PRD 文件有效性检查** — 初始化时用 Read 工具读取 PRD 文件第 1 行做存在性校验，文件不可读时立即中止并提示用户
+27. **Agent Registry 容错** — 读取 agent-registry/{key}.json 失败时，记录该 Agent 为"降级通过"，在 architecture-design.md 中标注缺失维度。不阻塞流程
+28. **Phase 1a 部分完成容错** — 超时后（300s+120s）已完成的 Agent 正常进入 Phase 1b，超时的 Agent 标记为 ⚠️ 降级通过，不影响其他 Agent 继续推进
+29. **修正循环禁止询问用户** — Phase 2 每轮修正都全自动执行，不中途询问用户，不阻塞
 
 #### 数据访问边界（明确什么可读、什么不可读）
 

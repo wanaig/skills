@@ -110,7 +110,7 @@ architecture/ ──▶  ┌─ backend/  ─┐    │    前后端联调
 | `fa_infra` | 基础设施架构 | `infra-architecture.md` |
 | `fa_security` | 安全架构设计 | `security-architecture.md` |
 | `fa_api_design` | API 契约设计 | `api-contract.md` |
-| `fa-ui-ux` | UI/UX 架构设计 | `ui-ux-architecture.md` |
+| `fa_uiux` | UI/UX 架构设计 | `ui-ux-architecture.md` |
 
 ### backend/ — 5 个 Agent
 
