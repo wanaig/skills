@@ -103,7 +103,7 @@
 获取到 ID 后，必须记录在日志中。
 
 **ID 使用规则**：
-1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEPLOY_INFRA_ID}"` 格式（Agent Registry JSON 中 `agentId` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEPLOY_INFRA_ID}"` 格式（Agent Registry JSON 中 `agentId` 字段的值），配合对应的 `subagent_type` 使用
 2. **修正环节中复用 INFRA_ID** — 修正循环中 resume 同一个 deploy_infra Agent，禁止启动新 Agent
 3. **修正环节结束后所有 DEPLOY_ID 失效**
 
@@ -126,12 +126,11 @@
 
 **日志写入**：`- {yymmdd hhmm} 启动部署计划子Agent`
 
-启动 deploy_planner 子Agent：
+启动 deploy-planner 子Agent：
 
 ```
-skill(name: "deploy_planner")
 Task(
-  subagent_type: "general",
+  subagent_type: "deploy-planner",
   prompt: "技术栈文档：{TECH_STACK_FILE}\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n实施路线图：{IMPLEMENTATION_ROADMAP_FILE}\n前端项目根目录：{FRONTEND_ROOT}\n后端项目根目录：{BACKEND_ROOT}\n计划输出目录：{DEPLOY_ROOT}/outputs/deploy_planner\n代码输出目录：{DEPLOY_ROOT}/project\n\n请阅读架构文档和实施路线图，产出 deploy-plan.md、deploy-config.md 和 deploy-checklist.md（写入计划输出目录），并将部署配置文件（docker-compose、nginx、脚本等）写入代码输出目录。完成后只返回文件路径列表。"
 )
 ```
@@ -156,12 +155,11 @@ Task(
 
 **日志写入**：`- {yymmdd hhmm} 启动部署基础设施子Agent`
 
-启动 deploy_infra 子Agent：
+启动 deploy-infra 子Agent：
 
 ```
-skill(name: "deploy_infra")
 Task(
-  subagent_type: "general",
+  subagent_type: "deploy-infra",
   prompt: "部署计划：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-plan.md\n部署配置：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-config.md\n技术栈文档：{TECH_STACK_FILE}\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n前端项目根目录：{FRONTEND_ROOT}\n后端项目根目录：{BACKEND_ROOT}\n代码输出目录：{DEPLOY_ROOT}/project\n\n请根据部署计划和架构文档，创建部署配置文件（docker-compose、K8s manifests、nginx、脚本等，按 infra-architecture.md 推荐的部署形态），写入代码输出目录。完成后只返回文件路径列表。"
 )
 ```
@@ -179,12 +177,11 @@ Task(
 
 **日志写入**：`- {yymmdd hhmm} 启动部署验证子Agent`
 
-启动 deploy_verifier 子Agent：
+启动 deploy-verifier 子Agent：
 
 ```
-skill(name: "deploy_verifier")
 Task(
-  subagent_type: "general",
+  subagent_type: "deploy-verifier",
   prompt: "部署计划：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-plan.md\n部署配置：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-config.md\n部署检查清单：{DEPLOY_ROOT}/outputs/deploy_planner/deploy-checklist.md\n技术栈文档：{TECH_STACK_FILE}\n基础设施架构文档：{INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_verifier\n\n请对照架构文档和检查清单，验证所有部署配置的完整性和安全性。测试报告同时输出 markdown 和 JSON 格式，JSON 报告命名为 deploy-verification-report.json。所有判定均从 JSON 的 verdict 字段提取。"
 )
 ```
@@ -205,10 +202,9 @@ Task(
 **第 1 轮修正：**
 1. resume DEPLOY_INFRA_ID，令其阅读验证报告并修正：
    ```
-   skill(name: "deploy_infra")
    Task(
      task_id: "{DEPLOY_INFRA_ID}",
-     subagent_type: "general",
+     subagent_type: "deploy-infra",
      prompt: "请读取 {DEPLOY_ROOT}/outputs/deploy_verifier/deploy-verification-report.json 并修正所有问题。完成后简短确认。")
    ```
 2. 重新启动 deploy_verifier 验证
@@ -576,7 +572,7 @@ rm -rf {DEPLOY_ROOT}/outputs/agent-registry/
 
 1. **默认假设优先，不阻塞流程** — 缺失信息时用安全默认值填充，标注假设项后直接推进，禁止询问用户
 2. **安全不妥协** — 密钥、证书、密码等安全资源必须生成真值，绝不用占位符
-3. **resume 用 Agent ID** — 修正循环中 resume 使用 `task_id: "{DEPLOY_INFRA_ID}"`，配合 `subagent_type: "general"`。Resume 前需先 `skill(name: "...")` 加载对应技能
+3. **resume 用 Agent ID** — 修正循环中 resume 使用 `task_id: "{DEPLOY_INFRA_ID}"`，配合对应的 `subagent_type`
 4. **修正循环全自动** — 全部自动执行，不中途询问用户，不阻塞流程
 5. **Severity 分级** — 验证报告中的 FAIL 按 blocker/major/minor 三级定级：blocker（安全/核心功能不可用）、major（重要功能缺失）、minor（可接受的优化项）。minor 级别允许 ⚠️ 降级通过
 6. **不执行回滚** — 3 轮修正后仍有 blocker/major 的自动降级为 ⚠️，记录到日志，不重试

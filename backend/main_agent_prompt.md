@@ -107,8 +107,8 @@
 
 #### ID 使用规则
 
-1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值，如 `abc123`），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
-2. **resume 必须指定 subagent_type="general"**，并在 resume 前先 skill(name: "...") 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合对应的 `subagent_type` 使用
+2. **resume 必须指定对应的 subagent_type**，无需加载技能
 3. **每批开发轮次结束后，DEV_ID 失效**，新批重新启动开发Agent
 4. **同批修正循环中复用同一个 DEV_ID**，禁止启动新Agent
 5. **同批修正循环中复用测试Agent ID**，新批开发时重新启动
@@ -138,12 +138,11 @@
 
 **日志写入**：`- {yymmdd hhmm} 启动计划子Agent`
 
-启动 be_planner 子Agent：
+启动 be-planner 子Agent：
 
 ```
-skill(name: "be_planner")
 Task(
-  subagent_type: "general",
+  subagent_type: "be-planner",
   prompt: "需求文档路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/be_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、api-design-guide.md（写入计划输出目录）和项目基础框架（写入代码输出目录）。完成后只返回文件路径列表。"
 )
 ```
@@ -174,14 +173,13 @@ Task(
 
 #### Step 1：批量开发
 
-对当前批次，启动 **1 个** be_api_dev 子Agent，在一个会话中连续开发本批次所有接口：
+对当前批次，启动 **1 个** be-api-dev 子Agent，在一个会话中连续开发本批次所有接口：
 
 ```
 日志：- {yymmdd hhmm} 本批开发启动：{接口1} ({描述1}), {接口2} ({描述2}), ...
 
-skill(name: "be_api_dev")
 Task(
-  subagent_type: "general",
+  subagent_type: "be-api-dev",
   run_in_background: true,
   prompt: "开发任务：{接口1} ({描述1}), {接口2} ({描述2}), ...\ndev-plan: {PROJECT_ROOT}/outputs/be_planner/dev-plan.md\napi-design-guide: {PROJECT_ROOT}/outputs/be_planner/api-design-guide.md\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个接口开发，每个接口完成后写入对应文件。"
 )
@@ -200,22 +198,19 @@ Task(
 **只启动 3 个测试Agent**（每个维度一个），每个 Agent 测试本批次全部接口：
 
 ```
-# 共 3 个测试Agent并行，每个启动前先 skill 加载对应技能
-skill(name: "be_tester_functional")
+# 共 3 个测试Agent并行
 Task(
-  subagent_type: "general",
+  subagent_type: "be-tester-functional",
   run_in_background: true,
   prompt: "功能测试：{本批所有接口，逗号分隔}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {PROJECT_ROOT}/outputs/be_planner/api-design-guide.md\n输出目录: {PROJECT_ROOT}/outputs/be_tester_functional/\n\n测试报告同时输出 markdown 和 JSON 格式。JSON 报告命名为 {接口名}-{dimension}-report.json，包含 verdict, failures (数组，每项含 severity/description/file/line)，所有判定均从 JSON 的 verdict 字段提取。")
 
-skill(name: "be_tester_performance")
 Task(
-  subagent_type: "general",
+  subagent_type: "be-tester-performance",
   run_in_background: true,
   prompt: "性能测试：{本批所有接口，逗号分隔}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {PROJECT_ROOT}/outputs/be_planner/api-design-guide.md\n输出目录: {PROJECT_ROOT}/outputs/be_tester_performance/\n\n测试报告同时输出 markdown 和 JSON 格式。JSON 报告命名为 {接口名}-{dimension}-report.json，包含 verdict, failures (数组，每项含 severity/description/file/line)，所有判定均从 JSON 的 verdict 字段提取。")
 
-skill(name: "be_tester_security")
 Task(
-  subagent_type: "general",
+  subagent_type: "be-tester-security",
   run_in_background: true,
   prompt: "安全测试：{本批所有接口，逗号分隔}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {PROJECT_ROOT}/outputs/be_planner/api-design-guide.md\n输出目录: {PROJECT_ROOT}/outputs/be_tester_security/\n\n测试报告同时输出 markdown 和 JSON 格式。JSON 报告命名为 {接口名}-{dimension}-report.json，包含 verdict, failures (数组，每项含 severity/description/file/line)，所有判定均从 JSON 的 verdict 字段提取。")
 ```
@@ -251,11 +246,10 @@ Task(
 1. 汇总所有 FAIL 接口的 JSON 测试报告文件路径（按接口名+维度归类，如 `用户注册` 的功能/性能/安全报告各一份）
 2. resume DEV_ID 对应的开发 Agent，把所有 FAIL 的报告路径传给开发 Agent，令其一次性修正全部问题：
    ```
-   skill(name: "be_api_dev")
    Task(
      task_id: "{DEV_ID}",
-     subagent_type: "general",
-           prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标接口：{FAIL接口名列表}\n项目根目录：{PROJECT_ROOT}/project\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
+     subagent_type: "be-api-dev",
+     prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标接口：{FAIL接口名列表}\n项目根目录：{PROJECT_ROOT}/project\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/be_api_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
    ```
 3. 记录日志：`- {yymmdd hhmm} 第1轮修正完成：{FAIL接口列表}(DEV_ID:{DEV_ID})`
 4. 对每个有 FAIL 的测试维度，resume 对应的测试 Agent 重新测试本批全部接口
@@ -854,7 +848,7 @@ else:
 
 ### 关键规则
 
-1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合对应的 `subagent_type` 使用
 2. **不在 prompt 中重复 agent 定义已有内容**，定义管"怎么干活"，prompt 只说"干什么活"
 3. **不读子Agent产出文件的内容**，只接收路径（**例外：dev-plan.md 由主Agent直接读写，用于提取任务列表和更新状态**）
 4. **每批任务完成必须更新 dev-plan.md**
@@ -867,6 +861,22 @@ else:
 11. **Severity 分级** — 测试报告中的 FAIL 按 blocker/major/minor 三级定级：blocker（功能不可用/安全漏洞）、major（核心功能缺陷/性能不达标）、minor（可接受的优化项）。仅 minor 级别允许 ⚠️ 降级通过
 12. **不执行回滚** — 3 轮修正后仍有 blocker/major 的自动降级为 ⚠️，记录到日志，不重试，不询问用户
 13. **修正轮次成本洞察** — 修正轮次越高说明 prompt 或开发质量存在问题，建议在 lessons-learned 中重点记录
+
+### 子代理调用方式
+
+**使用代理方式调用，无需加载技能**：
+```markdown
+# 计划子代理
+Task(subagent_type: "be-planner", prompt: "...")
+
+# 开发子代理
+Task(subagent_type: "be-api-dev", prompt: "...")
+
+# 测试子代理
+Task(subagent_type: "be-tester-functional", prompt: "...")
+Task(subagent_type: "be-tester-performance", prompt: "...")
+Task(subagent_type: "be-tester-security", prompt: "...")
+```
 
 #### 数据访问边界（明确什么可读、什么不可读）
 
@@ -886,9 +896,9 @@ else:
 
 #### 补充规则（14-20）
 
-14. **架构文档只传路径不读内容** — 初始化时只记录路径，通过 skill(name: "be_planner") + Task(subagent_type: "general") 传给子Agent
+14. **架构文档只传路径不读内容** — 初始化时只记录路径，通过 Task(subagent_type: "be-planner") 传给子Agent
 15. **测试结果只读 JSON 判定** — 读取 test-report.json 中的 `verdict` 字段，不 Read 完整报告
-16. **所有代码修改委托给 be_api_dev** — 即使改一行代码也要委托（skill(name: "be_api_dev") + Task(subagent_type: "general")），主Agent不碰任何代码文件
+16. **所有代码修改委托给 be-api-dev** — 即使改一行代码也要委托 Task(subagent_type: "be-api-dev")，主Agent不碰任何代码文件
 17. **后台通知简短确认** — 迟到的后台Agent通知只需回复"已确认"，不复述内容
 18. **开发批量 = 测试批量** — 默认 BATCH_SIZE=1（单接口），用户可指定 N
 19. **并发上限始终为3** — 测试阶段始终只有3个Agent并行，开发阶段每批只启动1个开发Agent

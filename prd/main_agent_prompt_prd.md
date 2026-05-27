@@ -96,28 +96,24 @@
 每个子Agent产出对应维度的**初稿 v1**。各子Agent内部必须完成完整的分析流程。
 
 ```
-# 4 个分析Agent同时启动，启动前先 skill 加载对应技能
-skill(name: "prd_business")
+# 4 个分析Agent同时启动
 Task(
-  subagent_type: "general",
+  subagent_type: "prd-business",
   run_in_background: true,
   prompt: "阶段：初稿 v1\n用户输入：{用户提供的信息}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{产品类型/目标用户/规模等Step 0收集的信息}\n\n产出 business-analysis.md 初稿。要求：\n1. 产品定位和价值主张\n2. 目标市场和用户画像\n3. 竞品分析（至少3个竞品）\n4. 商业模式\n5. 核心竞争优势\n6. 成功指标（KPI）\n完成后只返回文件路径。")
 
-skill(name: "prd_user")
 Task(
-  subagent_type: "general",
+  subagent_type: "prd-user",
   run_in_background: true,
   prompt: "阶段：初稿 v1\n用户输入：{用户提供的信息}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{产品类型/目标用户/规模等Step 0收集的信息}\n\n产出 user-research.md 初稿。要求：\n1. 用户画像（至少3种用户角色）\n2. 用户旅程图\n3. 痛点和需求分析\n4. 用户故事（User Story格式）\n5. 验收标准（AC）\n完成后只返回文件路径。")
 
-skill(name: "prd_functional")
 Task(
-  subagent_type: "general",
+  subagent_type: "prd-functional",
   run_in_background: true,
   prompt: "阶段：初稿 v1\n用户输入：{用户提供的信息}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{产品类型/目标用户/规模等Step 0收集的信息}\n\n产出 functional-spec.md 初稿。要求：\n1. 功能模块划分\n2. 功能清单（P0/P1/P2优先级）\n3. 业务流程图\n4. 数据字典\n5. 接口需求概要\n6. 非功能需求（性能/安全/可用性）\n完成后只返回文件路径。")
 
-skill(name: "prd_technical")
 Task(
-  subagent_type: "general",
+  subagent_type: "prd-technical",
   run_in_background: true,
   prompt: "阶段：初稿 v1\n用户输入：{用户提供的信息}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{产品类型/目标用户/规模等Step 0收集的信息}\n\n产出 technical-assessment.md 初稿。要求：\n1. 技术可行性分析\n2. 技术选型建议\n3. 架构约束\n4. 第三方依赖\n5. 技术风险评估\n6. 开发资源估算\n完成后只返回文件路径。")
 ```

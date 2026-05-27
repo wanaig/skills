@@ -98,8 +98,8 @@
 
 #### ID 使用规则
 
-1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
-2. **resume 必须指定 subagent_type="general"**，并在 resume 前先 skill(name: "...") 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合对应的 `subagent_type` 使用
+2. **resume 必须指定对应的 subagent_type**，无需加载技能
 3. **每批开发轮次结束后，DEV_ID 失效**，新批重新启动开发Agent
 4. **同批修正循环中复用同一个 DEV_ID**，禁止启动新Agent
 5. **同批修正循环中复用测试Agent ID**，新批开发时重新启动
@@ -129,12 +129,11 @@
 
 **日志写入**：`- {yymmdd hhmm} 启动计划子Agent`
 
-启动 dg_flutter_planner 子Agent：
+启动 dg-flutter-planner 子Agent：
 
 ```
-skill(name: "dg_flutter_planner")
 Task(
-  subagent_type: "general",
+  subagent_type: "dg-flutter-planner",
   prompt: "需求文件路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\nUI/UX 架构文档路径：{UI_UX_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/dg_flutter_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、design-guide.md（写入计划输出目录），并搭建项目基础设施（写入代码输出目录）。完成后只返回文件路径列表。"
 )
 ```
@@ -164,14 +163,13 @@ Task(
 
 #### Step 1：批量开发
 
-对当前批次，启动 **1 个** dg_flutter_dev 子Agent，在一个会话中连续开发本批次所有模块：
+对当前批次，启动 **1 个** dg-flutter-dev 子Agent，在一个会话中连续开发本批次所有模块：
 
 ```
 日志：- {yymmdd hhmm} 本批开发启动：{模块1} ({描述}), {模块2} ({描述}), ...
 
-skill(name: "dg_flutter_dev")
 Task(
-  subagent_type: "general",
+  subagent_type: "dg-flutter-dev",
   run_in_background: true,
   prompt: "开发任务：{模块1} ({描述}), {模块2} ({描述}), ...\ndev-plan: {PROJECT_ROOT}/outputs/dg_flutter_planner/dev-plan.md\ndesign-guide: {PROJECT_ROOT}/outputs/dg_flutter_planner/design-guide.md\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/dg_flutter_dev/lessons-learned.md\nAPI 契约文档：{CONTRACT_FILE}\n项目根目录：{PROJECT_ROOT}/project\n需求文件路径：{REQUIREMENT_FILE}\n\n请按顺序逐模块开发，确保跨平台兼容（iOS/Android/Web/Desktop）。"
 )
@@ -190,22 +188,19 @@ Task(
 **只启动 3 个测试Agent**（每个维度一个），每个 Agent 测试本批次全部模块：
 
 ```
-# 共 3 个测试Agent并行，每个启动前先 skill 加载对应技能
-skill(name: "dg_flutter_tester_crossplatform")
+# 共 3 个测试Agent并行
 Task(
-  subagent_type: "general",
+  subagent_type: "dg-flutter-tester-crossplatform",
   run_in_background: true,
   prompt: "跨端兼容测试：{本批所有模块列表，逗号分隔}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {PROJECT_ROOT}/outputs/dg_flutter_planner/design-guide.md\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_crossplatform/\n\n测试报告同时输出 markdown 和 JSON 格式。JSON 报告命名为 {模块}-{dimension}-report.json，包含 verdict, failures (数组，每项含 severity/description/file/line)，所有判定均从 JSON 的 verdict 字段提取。")
 
-skill(name: "dg_flutter_tester_logic")
 Task(
-  subagent_type: "general",
+  subagent_type: "dg-flutter-tester-logic",
   run_in_background: true,
   prompt: "逻辑测试：{本批所有模块列表，逗号分隔}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {PROJECT_ROOT}/outputs/dg_flutter_planner/design-guide.md\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_logic/\n\n测试报告同时输出 markdown 和 JSON 格式。JSON 报告命名为 {模块}-{dimension}-report.json，包含 verdict, failures (数组，每项含 severity/description/file/line)，所有判定均从 JSON 的 verdict 字段提取。")
 
-skill(name: "dg_flutter_tester_style")
 Task(
-  subagent_type: "general",
+  subagent_type: "dg-flutter-tester-style",
   run_in_background: true,
   prompt: "样式测试：{本批所有模块列表，逗号分隔}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {PROJECT_ROOT}/outputs/dg_flutter_planner/design-guide.md\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_style/\n\n测试报告同时输出 markdown 和 JSON 格式。JSON 报告命名为 {模块}-{dimension}-report.json，包含 verdict, failures (数组，每项含 severity/description/file/line)，所有判定均从 JSON 的 verdict 字段提取。")
 ```
@@ -241,11 +236,10 @@ Task(
 1. 汇总所有 FAIL 模块的 JSON 测试报告文件路径（按模块名+维度归类）
 2. resume DEV_ID 对应的开发 Agent，把所有 FAIL 的报告路径传给开发 Agent，令其一次性修正全部问题：
    ```
-   skill(name: "dg_flutter_dev")
    Task(
      task_id: "{DEV_ID}",
-     subagent_type: "general",
-           prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标模块：{FAIL模块名列表}\n项目根目录：{PROJECT_ROOT}/project\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/dg_flutter_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
+     subagent_type: "dg-flutter-dev",
+     prompt: "请读取以下测试报告并修正所有问题：\n{所有FAIL报告的路径列表}\n\n目标模块：{FAIL模块名列表}\n项目根目录：{PROJECT_ROOT}/project\ntech-stack: {TECH_STACK_FILE}\nlessons-learned: {PROJECT_ROOT}/outputs/dg_flutter_dev/lessons-learned.md\n\n修正完成后更新 lessons-learned.md。简短确认即可。")
    ```
 3. 记录日志：`- {yymmdd hhmm} 第1轮修正完成：{FAIL模块列表}(DEV_ID:{DEV_ID})`
 4. 对每个有 FAIL 的测试维度，resume 对应的测试 Agent 重新测试本批全部模块
@@ -764,7 +758,7 @@ rm -rf {PROJECT_ROOT}/outputs/agent-registry/
 
 ### 关键规则
 
-1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能
+1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合对应的 `subagent_type` 使用
 2. **不在 prompt 中重复 agent 定义已有内容**，定义管"怎么干活"，prompt 只说"干什么活"
 3. **不读子Agent产出文件的内容**，只接受路径（**例外：dev-plan.md 由主Agent直接读写，用于提取模块列表和更新状态**）
 4. **每批任务完成必须更新 dev-plan.md**
