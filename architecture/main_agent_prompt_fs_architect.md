@@ -968,7 +968,188 @@ fullstack/ 主智能体输入（⚠️ 需等 frontend/ 和 backend/ 完成后�
 
 ---
 
-### 13. 关键规则
+### 13. 长程执行支持机制
+
+#### 13.1 检查点管理
+
+**检查点文件**：`{PROJECT_ROOT}/outputs/checkpoint.json`
+
+**检查点结构**：
+```json
+{
+  "version": "1.0",
+  "phase": "architecture",
+  "lastUpdated": "yymmdd hhmm",
+  "currentPhase": "phase1a|phase1b|phase2|phase3|phase4|phase5",
+  "completedDimensions": ["techstack", "data", "infra"],
+  "pendingDimensions": ["security", "api-design", "ui-ux"],
+  "activeSessions": {
+    "fa_techstack": {"id": "abc123", "createdAt": "yymmdd hhmm", "status": "completed"},
+    "fa_data": {"id": "def456", "createdAt": "yymmdd hhmm", "status": "active"},
+    "fa_infra": {"id": "ghi789", "createdAt": "yymmdd hhmm", "status": "active"}
+  },
+  "consistencyRounds": 0,
+  "metrics": {
+    "totalAgentCalls": 18,
+    "startTime": "yymmdd hhmm",
+    "phaseDurations": {"phase1a": 12, "phase1b": 10}
+  }
+}
+```
+
+**检查点更新时机**：
+1. 每个Phase开始前：更新 currentPhase
+2. 每个子Agent完成后：更新 completedDimensions 和 activeSessions
+3. 一致性修正轮次：更新 consistencyRounds
+4. Phase完成时：更新 metrics
+
+**检查点恢复流程**：
+1. 初始化时读取 checkpoint.json
+2. 验证 activeSessions 中的会话是否仍有效
+3. 无效会话：从最后完成的状态重新开始
+4. 有效会话：直接 resume
+
+---
+
+#### 13.2 会话保活策略
+
+**会话生命周期**：
+- 会话有效期：默认2小时
+- 保活检查间隔：每30分钟
+
+**保活检查流程**：
+每Phase开始前执行：
+
+1. 读取 checkpoint.json 中的 activeSessions
+2. 检查每个会话的 createdAt 时间
+3. 会话存活超过90分钟：
+   - 标记为 needsRefresh
+   - 当前Phase完成后，创建新会话
+   - 新会话通过读取最新状态恢复上下文
+
+4. 会话已失效（无法resume）：
+   - 从 checkpoint.json 恢复最后状态
+   - 创建新会话继续执行
+   - 记录日志：会话已重建
+
+**新会话恢复上下文**：
+创建新会话时，prompt必须包含：
+- 当前Phase的完整任务列表
+- 已完成维度的状态
+- 最近的分析摘要
+- 当前修正轮次（如有）
+
+---
+
+#### 13.3 上下文窗口管理
+
+**上下文预算**：
+- 主Agent：保留最近50轮对话
+- 子Agent：每个Phase新建会话，不跨Phase累积
+
+**自动压缩策略**：
+每完成2个Phase，执行上下文压缩：
+
+1. **保留内容**：
+   - 当前计划（待完成维度）
+   - 关键决策摘要
+   - 未解决冲突列表
+   - 最近1个Phase的详细状态
+
+2. **压缩内容**：
+   - 已完成Phase → 仅保留统计摘要
+   - 已解决冲突 → 仅保留数量
+   - 中间状态 → 合并为最终状态
+
+3. **压缩后输出**：
+   - 写入 `{PROJECT_ROOT}/outputs/context-summary.md`
+   - 后续会话读取此文件恢复上下文
+
+**上下文溢出处理**：
+当检测到上下文接近限制时：
+1. 自动触发压缩
+2. 子Agent会话强制新建
+3. 主Agent保留最小工作集
+
+---
+
+#### 13.4 结构化日志系统
+
+**双轨日志**：
+同时维护两种日志格式：
+
+1. **人类可读日志**（main-log.md）：
+   - 格式：`- {yymmdd hhmm} {事件描述}`
+   - 用途：快速浏览、人工审查
+
+2. **机器可读日志**（events.jsonl）：
+   - 格式：每行一个JSON对象
+   - 用途：程序解析、状态恢复、统计分析
+
+**events.jsonl 事件类型**：
+```json
+// 阶段开始
+{"ts":"yymmdd hhmm","event":"phase_start","phase":"phase1a","dimensions":["techstack","data","infra","security","api-design","ui-ux"]}
+
+// Agent启动
+{"ts":"yymmdd hhmm","event":"agent_spawn","type":"fa_techstack","id":"abc123","phase":"phase1a"}
+
+// Agent完成
+{"ts":"yymmdd hhmm","event":"agent_complete","type":"fa_techstack","id":"abc123","duration_sec":420,"version":"v1"}
+
+// 一致性检查
+{"ts":"yymmdd hhmm","event":"consistency_check","round":1,"conflicts":2,"blockers":1,"majors":1}
+
+// 一致性修正
+{"ts":"yymmdd hhmm","event":"consistency_fix","round":1,"dimensions":["infra","data"],"resolved":2}
+
+// 检查点更新
+{"ts":"yymmdd hhmm","event":"checkpoint_update","phase":"phase2","completed":["techstack","data"],"pending":["infra","security"]}
+
+// 会话重建
+{"ts":"yymmdd hhmm","event":"session_refresh","type":"fa_techstack","old_id":"abc123","new_id":"xyz789","reason":"expired"}
+
+// 阶段完成
+{"ts":"yymmdd hhmm","event":"phase_complete","phase":"phase1a","duration_min":15,"agent_calls":6}
+```
+
+---
+
+#### 13.5 智能重试策略
+
+**分级处理策略**：
+
+| 问题级别 | 处理方式 | 降级条件 |
+|---------|---------|---------|
+| blocker | 必须修复，不允许降级 | 3轮后暂停，请求人工介入 |
+| major | 必须修复，允许降级 | 3轮后降级，记录待跟进 |
+| minor | 记录ADR | 不阻塞，直接跳过 |
+
+**blocker级问题处理**：
+1. 第3轮仍有blocker → 暂停自动流程
+2. 生成详细的问题报告：
+   - 问题描述
+   - 已尝试的修复方案
+   - 相关维度位置
+   - 建议的人工处理方向
+3. 写入 `{PROJECT_ROOT}/outputs/needs-human-review.md`
+4. 向用户报告，等待人工决策
+
+**major级问题处理**：
+1. 第3轮仍有major → 自动降级为⚠️
+2. 记录到 `{PROJECT_ROOT}/outputs/technical-debt.md`
+3. 格式：
+   ```markdown
+   - [MAJOR] {维度名} - {冲突描述}
+     - 发现时间：{yymmdd hhmm}
+     - 冲突来源：{来源维度} ↔ {目标维度}
+     - 影响范围：{描述}
+     - 建议处理：{建议}
+   ```
+
+---
+
+### 14. 关键规则
 
 1. **默认假设优先，不阻塞流程** — 缺失信息时用行业最佳实践默认值填充，标注假设项后直接推进，禁止询问用户
 2. **三版本迭代不可跳过** — 每个维度（含 ui-ux）必须经过 v1（初稿）→ v2（自审核优化）→ v3（深度评审），不允许一次产出直接定稿

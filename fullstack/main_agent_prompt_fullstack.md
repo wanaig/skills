@@ -426,6 +426,325 @@ Task(
 
 ---
 
+### 长程执行支持机制
+
+#### 检查点管理
+
+**检查点文件**：`{FRONTEND_ROOT}/outputs/checkpoint.json`
+
+**检查点结构**：
+```json
+{
+  "version": "1.0",
+  "phase": "fullstack_batch_integration",
+  "lastUpdated": "yymmdd hhmm",
+  "currentBatch": 3,
+  "totalBatches": 7,
+  "completedAPIs": ["user-register", "user-login", "user-info"],
+  "pendingAPIs": ["order-list", "order-detail", "order-create", "payment"],
+  "activeSessions": {
+    "dev": {"id": "abc123", "skill": "fs_api_dev", "createdAt": "yymmdd hhmm", "status": "active"},
+    "test_contract": {"id": "def456", "skill": "fs_tester_contract", "createdAt": "yymmdd hhmm", "status": "active"},
+    "test_dataflow": {"id": "ghi789", "skill": "fs_tester_dataflow", "createdAt": "yymmdd hhmm", "status": "active"},
+    "test_integration": {"id": "jkl012", "skill": "fs_tester_integration", "createdAt": "yymmdd hhmm", "status": "pending"}
+  },
+  "currentFixRound": 0,
+  "metrics": {
+    "totalAgentCalls": 45,
+    "startTime": "yymmdd hhmm",
+    "batchDurations": [12, 15, 18]
+  }
+}
+```
+
+**检查点更新时机**：
+1. 每批次开始前：更新 currentBatch 和 pendingAPIs
+2. 每批次完成后：更新 completedAPIs 和 metrics
+3. Agent会话创建后：更新 activeSessions
+4. Agent会话结束后：清除对应session记录
+
+**检查点恢复流程**：
+1. 读取 checkpoint.json
+2. 验证 activeSessions 中的会话是否仍有效
+3. 无效会话：从 integration-plan.md 重新读取状态
+4. 有效会话：直接 resume
+
+---
+
+#### 会话保活策略
+
+**会话生命周期**：
+- 会话有效期：默认2小时
+- 保活检查间隔：每30分钟
+
+**保活检查流程**：
+每批次开始前执行：
+
+1. 读取 checkpoint.json 中的 activeSessions
+2. 检查每个会话的 createdAt 时间
+3. 会话存活超过90分钟：
+   - 标记为 needsRefresh
+   - 当前批次完成后，创建新会话
+   - 新会话通过读取最新状态恢复上下文
+
+4. 会话已失效（无法resume）：
+   - 从 checkpoint.json 恢复最后状态
+   - 创建新会话继续执行
+   - 记录日志：会话已重建
+
+**新会话恢复上下文**：
+创建新会话时，prompt必须包含：
+- 当前批次的完整任务列表
+- 已完成接口的状态
+- 最近的测试报告摘要（仅verdict字段）
+- 当前修正轮次（如有）
+
+---
+
+#### 上下文窗口管理
+
+**上下文预算**：
+- 主Agent：保留最近50轮对话
+- 子Agent：每批次新建会话，不跨批次累积
+
+**自动压缩策略**：
+每完成3个批次，执行上下文压缩：
+
+1. **保留内容**：
+   - 当前计划（integration-plan.md的待办部分）
+   - 关键决策摘要
+   - 未解决问题列表
+   - 最近1个批次的详细状态
+
+2. **压缩内容**：
+   - 已完成批次 → 仅保留统计摘要
+   - 已解决测试问题 → 仅保留数量
+   - 中间状态 → 合并为最终状态
+
+3. **压缩后输出**：
+   - 写入 `{FRONTEND_ROOT}/outputs/context-summary.md`
+   - 后续会话读取此文件恢复上下文
+
+**上下文溢出处理**：
+当检测到上下文接近限制时：
+1. 自动触发压缩
+2. 子Agent会话强制新建
+3. 主Agent保留最小工作集
+
+---
+
+#### 结构化日志系统
+
+**双轨日志**：
+同时维护两种日志格式：
+
+1. **人类可读日志**（main-log.md）：
+   - 格式：`- {yymmdd hhmm} {事件描述}`
+   - 用途：快速浏览、人工审查
+
+2. **机器可读日志**（events.jsonl）：
+   - 格式：每行一个JSON对象
+   - 用途：程序解析、状态恢复、统计分析
+
+**events.jsonl 事件类型**：
+```json
+// 批次开始
+{"ts":"yymmdd hhmm","event":"batch_start","batch":3,"apis":["order-list","order-detail","order-create"]}
+
+// Agent启动
+{"ts":"yymmdd hhmm","event":"agent_spawn","type":"fs_api_dev","id":"abc123","batch":3}
+
+// Agent完成
+{"ts":"yymmdd hhmm","event":"agent_complete","type":"fs_api_dev","id":"abc123","duration_sec":420}
+
+// 测试结果
+{"ts":"yymmdd hhmm","event":"test_result","api":"order-list","dimension":"contract","verdict":"PASS","warnings":0}
+
+// 修正循环
+{"ts":"yymmdd hhmm","event":"fix_round","batch":3,"round":1,"apis":["order-list"],"issues":["类型定义不匹配"]}
+
+// 批次完成
+{"ts":"yymmdd hhmm","event":"batch_complete","batch":3,"duration_min":15,"agent_calls":4,"pass_rate":0.67}
+
+// 检查点更新
+{"ts":"yymmdd hhmm","event":"checkpoint_update","batch":4,"completed":["user-register","user-login"],"pending":["order-list","order-detail"]}
+
+// 会话重建
+{"ts":"yymmdd hhmm","event":"session_refresh","type":"fs_api_dev","old_id":"abc123","new_id":"xyz789","reason":"expired"}
+
+// 阶段完成
+{"ts":"yymmdd hhmm","event":"phase_complete","phase":"fullstack","total_batches":7,"total_apis":20,"duration_min":180}
+```
+
+---
+
+#### 智能重试策略
+
+**分级处理策略**：
+
+| 问题级别 | 处理方式 | 降级条件 |
+|---------|---------|---------|
+| blocker | 必须修复，不允许降级 | 3轮后暂停，请求人工介入 |
+| major | 必须修复，允许降级 | 3轮后降级，记录待跟进 |
+| minor | 记录技术债务 | 不阻塞，直接跳过 |
+
+**blocker级问题处理**：
+1. 第3轮仍有blocker → 暂停自动流程
+2. 生成详细的问题报告：
+   - 问题描述
+   - 已尝试的修复方案
+   - 相关代码位置
+   - 建议的人工处理方向
+3. 写入 `{FRONTEND_ROOT}/outputs/needs-human-review.md`
+4. 向用户报告，等待人工决策
+
+**major级问题处理**：
+1. 第3轮仍有major → 自动降级为⚠️
+2. 记录到 `{FRONTEND_ROOT}/outputs/technical-debt.md`
+3. 格式：
+   ```markdown
+   - [MAJOR] {接口名} - {问题描述}
+     - 发现时间：{yymmdd hhmm}
+     - 测试维度：{dimension}
+     - 影响范围：{描述}
+     - 建议修复：{建议}
+   ```
+
+---
+
+#### 自适应批次策略
+
+**复杂度评估**：
+根据接口特征评估复杂度：
+
+| 特征 | 复杂度分数 | 示例 |
+|------|-----------|------|
+| 简单CRUD | 1 | 用户列表、配置查询 |
+| 标准业务 | 2 | 订单创建、支付处理 |
+| 复杂逻辑 | 3 | 报表生成、工作流引擎 |
+| 第三方集成 | 3 | 支付回调、OAuth认证 |
+| 批量操作 | 4 | 批量导入、批量更新 |
+
+**批次大小计算**：
+```
+totalComplexity = sum(api.complexity for api in pendingBatch)
+
+if totalComplexity <= 3:
+    BATCH_SIZE = 3  # 标准批次
+elif totalComplexity <= 6:
+    BATCH_SIZE = 2  # 中等批次
+else:
+    BATCH_SIZE = 1  # 单接口批次
+```
+
+**历史学习**：
+根据历史数据调整：
+
+1. **高修正率接口**（历史修正>=2次）：
+   - 强制单独处理
+   - BATCH_SIZE = 1
+
+2. **稳定接口**（历史修正=0）：
+   - 可适当增大批次
+   - BATCH_SIZE += 1（不超过上限）
+
+3. **相似接口**（同模块、同复杂度）：
+   - 可合并处理
+   - 共享测试用例
+
+---
+
+#### 并行度优化
+
+**动态并行策略**：
+
+1. **标准模式**（默认）：
+   - 测试Agent数量：3个（contract/dataflow/integration）
+   - 适用场景：接口数量 >= 3
+
+2. **紧凑模式**：
+   - 测试Agent数量：2个
+   - 适用场景：接口数量 = 2，或上下文紧张
+   - 策略：合并两个维度到一个Agent（如 contract+dataflow）
+
+3. **单批模式**：
+   - 测试Agent数量：1个
+   - 适用场景：接口数量 = 1，或剩余任务
+   - 策略：所有维度串行执行
+
+**并行度选择逻辑**：
+```
+remaining = len(pendingItems)
+if remaining >= 3:
+    parallelism = 3
+elif remaining == 2:
+    parallelism = 2
+else:
+    parallelism = 1
+```
+
+**资源感知调整**：
+- 检测到平台并发限制时，自动降低并行度
+- 上下文紧张时，减少并行度以降低上下文累积速度
+
+---
+
+#### 经验知识图谱集成
+
+**知识库文件**：`{FRONTEND_ROOT}/outputs/knowledge-base.json`
+
+**主Agent职责**：
+1. **初始化知识库**：首次启动时创建空的 knowledge-base.json 结构
+2. **传递知识库路径**：将 knowledge-base.json 路径传递给开发子Agent
+3. **读取知识库摘要**：每批次开始前，读取 knowledge-base.json 中的 patterns 和 antiPatterns 数量，了解已知问题
+4. **不直接修改知识库**：知识库由开发子Agent维护，主Agent只读取摘要信息
+
+**知识库应用**：
+1. **批次规划时**：参考历史修正数据，调整批次大小
+2. **测试结果分析时**：识别是否为已知问题模式
+3. **生成报告时**：引用知识库中的统计数据
+
+**知识库摘要读取**：
+```markdown
+读取 knowledge-base.json，提取：
+- patterns 数量：{count}
+- antiPatterns 数量：{count}
+- 最常见的 fixStrategy：{problemType} - {bestApproach}
+- 高频问题类型：{category}
+```
+
+---
+
+#### 可观测性增强
+
+**可观测性组件**：
+1. `status-tracker.json`：实时状态追踪
+2. `metrics.json`：性能指标收集
+3. `alerts.jsonl`：异常检测和告警
+
+**主Agent职责**：
+1. **初始化可观测性组件**：首次启动时创建 status-tracker.json、metrics.json、alerts.jsonl
+2. **更新状态追踪**：每批次开始/结束时更新 status-tracker.json
+3. **收集性能指标**：每批次完成后更新 metrics.json
+4. **检测异常**：每批次开始前检查异常规则，发现异常时生成告警
+5. **展示可观测性数据**：在仪表盘中展示状态、指标、告警
+
+**异常检测规则**：
+| 异常类型 | 检测条件 | 严重程度 | 处理方式 |
+|---------|---------|---------|---------|
+| Agent 超时 | 单次调用 > 300秒 | warning | 记录日志，继续等待 |
+| 连续超时 | 同一Agent连续3次超时 | critical | 暂停该Agent，创建新会话 |
+| 批次超时 | 单批次 > 60分钟 | warning | 记录日志，继续执行 |
+| 高修正率 | 连续3个批次修正率 > 50% | warning | 记录日志，分析原因 |
+| 上下文溢出 | 上下文使用率 > 90% | critical | 触发压缩，新建会话 |
+| 会话过期 | 会话存活 > 2小时 | warning | 自动刷新会话 |
+| 系统停滞 | 30分钟无进度更新 | critical | 检查系统状态，恢复执行 |
+
+**告警处理流程**：
+1. 检测异常 → 2. 生成告警（写入 alerts.jsonl）→ 3. 执行动作 → 4. 记录结果 → 5. 展示在仪表盘
+
+---
+
 ### 关键规则
 
 1. **resume 用 Agent ID** — 必须使用 `task_id: "{DEV_ID}"` 格式（Agent Registry JSON 中 `id` 字段的值），配合 `subagent_type: "general"` 使用。Resume 前需先 `skill(name: "...")` 加载对应技能

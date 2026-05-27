@@ -227,6 +227,61 @@ Three principles for writing lessons:
 2. **Pattern-level > Contract-level**: Write "what kind of scenario is prone to this mistake"
 3. **Transferable > Copyable**: Would this lesson still guide decisions in a completely different project?
 
+#### Step 3.1: Update Knowledge Base
+
+In addition to lessons-learned.md, also update the structured experience file `{PROJECT_ROOT}/outputs/knowledge-base.json`.
+
+**Knowledge base structure**:
+```json
+{
+  "patterns": [
+    {
+      "id": "PAT-001",
+      "category": "solidity_contract",
+      "subcategory": "access_control",
+      "problem": "Missing access control on sensitive functions",
+      "solution": "Use OpenZeppelin's AccessControl or Ownable",
+      "confidence": 0.95,
+      "occurrences": 5,
+      "firstSeen": "batch_2_fix_1",
+      "lastSeen": "batch_5"
+    }
+  ],
+  "antiPatterns": [
+    {
+      "id": "ANTI-001",
+      "category": "solidity_contract",
+      "pattern": "Using tx.origin for authentication",
+      "impact": "critical",
+      "detectedBy": "bc_tester_security",
+      "fixSuggestion": "Use msg.sender instead of tx.origin"
+    }
+  ],
+  "fixStrategies": [
+    {
+      "problemType": "reentrancy",
+      "successfulFixes": 8,
+      "avgRounds": 1.5,
+      "bestApproach": "Use ReentrancyGuard modifier and checks-effects-interactions pattern"
+    }
+  ]
+}
+```
+
+**Update flow**:
+1. Read existing knowledge-base.json (create empty structure if not exists)
+2. Analyze root cause of current fix
+3. Update or add patterns/antiPatterns
+4. Update fixStrategies success rate statistics
+5. Write back to knowledge-base.json
+
+**Experience application flow**:
+Before each development/fix:
+1. Read knowledge-base.json
+2. Match current task type (e.g., "access_control", "reentrancy", "gas_optimization")
+3. Apply known patterns to avoid repeated issues
+4. Reference fixStrategies to choose fix approach
+
 #### Step 4: Write Agent ID
 
 After completion, write your Agent ID to the registry file:

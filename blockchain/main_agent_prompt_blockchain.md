@@ -372,6 +372,248 @@ When the following exception events occur, append logs in the corresponding form
 
 ---
 
+### 8. Long-running Execution Support
+
+#### 8.1 Checkpoint Management
+
+**Checkpoint file**: `{PROJECT_ROOT}/outputs/checkpoint.json`
+
+**Checkpoint structure**:
+```json
+{
+  "version": "1.0",
+  "phase": "blockchain_batch_dev",
+  "lastUpdated": "yymmdd hhmm",
+  "currentBatch": 3,
+  "totalBatches": 7,
+  "completedContracts": ["token-contract", " governance-contract", "staking-contract"],
+  "pendingContracts": ["vault-contract", "bridge-contract", "oracle-contract"],
+  "activeSessions": {
+    "dev": {"id": "abc123", "skill": "bc_solidity_dev", "createdAt": "yymmdd hhmm", "status": "active"},
+    "test_func": {"id": "def456", "skill": "bc_tester_functional", "createdAt": "yymmdd hhmm", "status": "active"},
+    "test_security": {"id": "ghi789", "skill": "bc_tester_security", "createdAt": "yymmdd hhmm", "status": "active"},
+    "test_gas": {"id": "jkl012", "skill": "bc_tester_gas", "createdAt": "yymmdd hhmm", "status": "pending"}
+  },
+  "currentFixRound": 0,
+  "metrics": {
+    "totalAgentCalls": 45,
+    "startTime": "yymmdd hhmm",
+    "batchDurations": [12, 15, 18]
+  }
+}
+```
+
+**Checkpoint update timing**:
+1. Before each batch starts: update currentBatch and pendingContracts
+2. After each batch completes: update completedContracts and metrics
+3. After agent session created: update activeSessions
+4. After agent session ends: clear corresponding session record
+
+**Checkpoint recovery flow**:
+1. Read checkpoint.json
+2. Verify if sessions in activeSessions are still valid
+3. Invalid sessions: re-read status from dev-plan.md
+4. Valid sessions: resume directly
+
+---
+
+#### 8.2 Session Keep-alive Strategy
+
+**Session lifecycle**:
+- Session validity: default 2 hours
+- Keep-alive check interval: every 30 minutes
+
+**Keep-alive check flow**:
+Execute before each batch starts:
+
+1. Read activeSessions from checkpoint.json
+2. Check createdAt time for each session
+3. Sessions alive over 90 minutes:
+   - Mark as needsRefresh
+   - After current batch completes, create new session
+   - New session recovers context by reading latest status
+
+4. Sessions already expired (cannot resume):
+   - Recover last state from checkpoint.json
+   - Create new session to continue execution
+   - Log: session rebuilt
+
+**New session context recovery**:
+When creating new session, prompt must include:
+- Complete task list for current batch
+- Status of completed contracts
+- Recent test report summary (only verdict field)
+- Current correction round (if any)
+
+---
+
+#### 8.3 Context Window Management
+
+**Context budget**:
+- Master agent: keep last 50 rounds of conversation
+- Sub-agents: new session per batch, no cross-batch accumulation
+
+**Auto-compression strategy**:
+Execute context compression after every 3 batches:
+
+1. **Content to keep**:
+   - Current plan (dev-plan.md pending portion)
+   - Key decision summary
+   - Unresolved issue list
+   - Detailed status of last 1 batch
+
+2. **Content to compress**:
+   - Completed batches → only keep statistical summary
+   - Resolved test issues → only keep count
+   - Intermediate states → merge into final state
+
+3. **Output after compression**:
+   - Write to `{PROJECT_ROOT}/outputs/context-summary.md`
+   - Subsequent sessions read this file to recover context
+
+**Context overflow handling**:
+When detecting context approaching limits:
+1. Auto-trigger compression
+2. Force new sessions for sub-agents
+3. Master agent keeps minimal working set
+
+---
+
+#### 8.4 Structured Logging System
+
+**Dual-track logging**:
+Maintain two log formats simultaneously:
+
+1. **Human-readable log** (main-log.md):
+   - Format: `- {yymmdd hhmm} {event description}`
+   - Purpose: quick browsing, manual review
+
+2. **Machine-readable log** (events.jsonl):
+   - Format: one JSON object per line
+   - Purpose: program parsing, state recovery, statistical analysis
+
+**events.jsonl event types**:
+```json
+// Batch start
+{"ts":"yymmdd hhmm","event":"batch_start","batch":3,"contracts":["vault-contract","bridge-contract"]}
+
+// Agent spawn
+{"ts":"yymmdd hhmm","event":"agent_spawn","type":"bc_solidity_dev","id":"abc123","batch":3}
+
+// Agent complete
+{"ts":"yymmdd hhmm","event":"agent_complete","type":"bc_solidity_dev","id":"abc123","duration_sec":420}
+
+// Test result
+{"ts":"yymmdd hhmm","event":"test_result","contract":"vault-contract","dimension":"functional","verdict":"PASS","warnings":0}
+
+// Correction round
+{"ts":"yymmdd hhmm","event":"fix_round","batch":3,"round":1,"contracts":["vault-contract"],"issues":["reentrancy vulnerability"]}
+
+// Batch complete
+{"ts":"yymmdd hhmm","event":"batch_complete","batch":3,"duration_min":15,"agent_calls":4,"pass_rate":0.67}
+
+// Checkpoint update
+{"ts":"yymmdd hhmm","event":"checkpoint_update","batch":4,"completed":["token-contract","governance-contract"],"pending":["vault-contract","bridge-contract"]}
+
+// Session refresh
+{"ts":"yymmdd hhmm","event":"session_refresh","type":"bc_solidity_dev","old_id":"abc123","new_id":"xyz789","reason":"expired"}
+
+// Phase complete
+{"ts":"yymmdd hhmm","event":"phase_complete","phase":"blockchain","total_batches":7,"total_contracts":20,"duration_min":180}
+```
+
+---
+
+#### 8.5 Smart Retry Strategy
+
+**Graded handling strategy**:
+
+| Issue Level | Handling | Degradation Condition |
+|------------|---------|---------------------|
+| blocker | Must fix, no degradation allowed | Pause after 3 rounds, request human intervention |
+| major | Must fix, degradation allowed | Degrade after 3 rounds, record for follow-up |
+| minor | Record technical debt | Don't block, skip directly |
+
+**Blocker level handling**:
+1. Still have blocker after round 3 → pause automatic flow
+2. Generate detailed problem report:
+   - Problem description
+   - Tried fix approaches
+   - Related code location
+   - Suggested human handling direction
+3. Write to `{PROJECT_ROOT}/outputs/needs-human-review.md`
+4. Report to user, wait for human decision
+
+**Major level handling**:
+1. Still have major after round 3 → auto-degrade to ⚠️
+2. Record to `{PROJECT_ROOT}/outputs/technical-debt.md`
+3. Format:
+   ```markdown
+   - [MAJOR] {contract name} - {problem description}
+     - Discovery time: {yymmdd hhmm}
+     - Test dimension: {dimension}
+     - Impact scope: {description}
+     - Suggested fix: {suggestion}
+   ```
+
+---
+
+#### 8.6 Knowledge Base Integration
+
+**Knowledge base file**: `{PROJECT_ROOT}/outputs/knowledge-base.json`
+
+**Master agent responsibilities**:
+1. **Initialize knowledge base**: Create empty knowledge-base.json structure on first startup
+2. **Pass knowledge base path**: Pass knowledge-base.json path to development sub-agents
+3. **Read knowledge base summary**: Before each batch, read patterns and antiPatterns counts from knowledge-base.json to understand known issues
+4. **Don't directly modify knowledge base**: Knowledge base is maintained by development sub-agents, master agent only reads summary
+
+**Knowledge base application**:
+1. **Batch planning**: Reference historical fix data to adjust batch size
+2. **Test result analysis**: Identify if issues match known patterns
+3. **Report generation**: Reference statistics from knowledge base
+
+**Knowledge base summary reading**:
+```markdown
+Read knowledge-base.json, extract:
+- patterns count: {count}
+- antiPatterns count: {count}
+- Most common fixStrategy: {problemType} - {bestApproach}
+- High-frequency issue types: {category}
+```
+
+---
+
+#### 8.7 Observability Enhancement
+
+**Observability components**:
+1. `status-tracker.json`: Real-time status tracking
+2. `metrics.json`: Performance metrics collection
+3. `alerts.jsonl`: Anomaly detection and alerting
+
+**Master agent responsibilities**:
+1. **Initialize observability components**: Create status-tracker.json, metrics.json, alerts.jsonl on first startup
+2. **Update status tracking**: Update status-tracker.json at batch start/end
+3. **Collect performance metrics**: Update metrics.json after each batch completes
+4. **Detect anomalies**: Check anomaly rules before each batch, generate alerts when anomalies detected
+5. **Display observability data**: Show status, metrics, alerts in dashboard
+
+**Anomaly detection rules**:
+| Anomaly Type | Detection Condition | Severity | Handling |
+|---------|---------|---------|---------|
+| Agent timeout | Single call > 300s | warning | Log, continue waiting |
+| Consecutive timeouts | Same agent 3 consecutive timeouts | critical | Pause agent, create new session |
+| Batch timeout | Single batch > 60 min | warning | Log, continue execution |
+| High fix rate | 3 consecutive batches with fix rate > 50% | warning | Log, analyze reason |
+| Context overflow | Context usage > 90% | critical | Trigger compression, new session |
+| Session expired | Session alive > 2 hours | warning | Auto-refresh session |
+| System stall | No progress update for 30 min | critical | Check system status, resume execution |
+
+**Alert handling flow**:
+1. Detect anomaly → 2. Generate alert (write to alerts.jsonl) → 3. Execute action → 4. Record result → 5. Display in dashboard
+
+---
+
 ### 8. Key Rules
 
 1. **Resume uses Agent ID** — must use `task_id: "{DEV_ID}"` format (value of `id` field in Agent Registry JSON), with `subagent_type: "general"`. Call `skill(name: "...")` to load the corresponding skill before resume

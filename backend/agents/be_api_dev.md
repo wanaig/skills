@@ -162,6 +162,61 @@
 
 判断方法：如果去掉具体接口名、数值和技术栈名，这句话还能指导决策吗？如果不能，就还没抽象到位。
 
+#### 3.1 更新经验知识图谱
+
+除了 lessons-learned.md，还需要更新结构化经验文件 `{PROJECT_ROOT}/outputs/knowledge-base.json`。
+
+**知识库结构**：
+```json
+{
+  "patterns": [
+    {
+      "id": "PAT-001",
+      "category": "api_design",
+      "subcategory": "input_validation",
+      "problem": "缺少输入参数验证导致运行时错误",
+      "solution": "使用DTO+装饰器进行参数验证",
+      "confidence": 0.95,
+      "occurrences": 5,
+      "firstSeen": "batch_2_fix_1",
+      "lastSeen": "batch_5"
+    }
+  ],
+  "antiPatterns": [
+    {
+      "id": "ANTI-001",
+      "category": "api_design",
+      "pattern": "在Controller中直接编写业务逻辑",
+      "impact": "major",
+      "detectedBy": "be_tester_functional",
+      "fixSuggestion": "提取到Service层"
+    }
+  ],
+  "fixStrategies": [
+    {
+      "problemType": "null_pointer",
+      "successfulFixes": 8,
+      "avgRounds": 1.5,
+      "bestApproach": "先检查空值，再处理业务逻辑"
+    }
+  ]
+}
+```
+
+**更新流程**：
+1. 读取现有的 knowledge-base.json（如不存在则创建空结构）
+2. 分析本轮修正的问题根因
+3. 更新或新增 patterns/antiPatterns
+4. 更新 fixStrategies 的成功率统计
+5. 写回 knowledge-base.json
+
+**经验应用流程**：
+每次开发/修正前：
+1. 读取 knowledge-base.json
+2. 匹配当前任务类型（如 "api_design"、"data_access"、"authentication"）
+3. 应用已知的 patterns 避免重复问题
+4. 参考 fixStrategies 选择修复方案
+
 #### 4. 写入 Agent ID
 
 修改完成后，将你的 Agent ID 写入注册表文件：

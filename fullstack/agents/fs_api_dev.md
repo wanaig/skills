@@ -356,6 +356,61 @@ function transformKeys(obj: any): any {
 
 判断方法：如果去掉具体模块名、字段名和框架名，这句话还能指导决策吗？如果不能，就还没抽象到位。
 
+#### Step 3.1: 更新经验知识图谱
+
+除了 fullstack-lessons-learned.md，还需要更新结构化经验文件 `{FRONTEND_ROOT}/outputs/knowledge-base.json`。
+
+**知识库结构**：
+```json
+{
+  "patterns": [
+    {
+      "id": "PAT-001",
+      "category": "fullstack_integration",
+      "subcategory": "type_sync",
+      "problem": "前后端类型定义不一致导致运行时错误",
+      "solution": "使用OpenAPI代码生成或共享类型文件",
+      "confidence": 0.95,
+      "occurrences": 5,
+      "firstSeen": "batch_2_fix_1",
+      "lastSeen": "batch_5"
+    }
+  ],
+  "antiPatterns": [
+    {
+      "id": "ANTI-001",
+      "category": "fullstack_integration",
+      "pattern": "手动维护前后端类型定义",
+      "impact": "major",
+      "detectedBy": "fs_tester_contract",
+      "fixSuggestion": "使用代码生成工具自动同步"
+    }
+  ],
+  "fixStrategies": [
+    {
+      "problemType": "field_name_mismatch",
+      "successfulFixes": 8,
+      "avgRounds": 1.5,
+      "bestApproach": "在响应拦截器统一转换字段命名"
+    }
+  ]
+}
+```
+
+**更新流程**：
+1. 读取现有的 knowledge-base.json（如不存在则创建空结构）
+2. 分析本轮修正的问题根因
+3. 更新或新增 patterns/antiPatterns
+4. 更新 fixStrategies 的成功率统计
+5. 写回 knowledge-base.json
+
+**经验应用流程**：
+每次开发/修正前：
+1. 读取 knowledge-base.json
+2. 匹配当前任务类型（如 "type_sync"、"field_mapping"、"error_handling"）
+3. 应用已知的 patterns 避免重复问题
+4. 参考 fixStrategies 选择修复方案
+
 #### Step 4: 写入 Agent ID
 
 修改完成后，将你的 Agent ID 写入注册表文件：
