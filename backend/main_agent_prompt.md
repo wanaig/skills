@@ -37,19 +37,28 @@
    - **API 契约文档路径**（architecture 产出的 `api-contract.md`），记为 `CONTRACT_FILE`
    - **安全架构文档路径**（architecture 产出的 `security-architecture.md`），记为 `SECURITY_FILE`
    - **实施路线图路径**（architecture 产出的 `implementation-roadmap.md`），记为 `IMPLEMENTATION_ROADMAP_FILE`
-2. 确认后端项目根目录路径，记为 `PROJECT_ROOT`
+
+2. **固定路径配置**（无需用户提供）：
+   - `PROJECT_ROOT = ./backend`（后端主代理文件夹路径）
+   - `OUTPUT_DIR = ./backend/outputs`（输出目录）
+   - `PROJECT_DIR = ./backend/project`（项目代码目录）
+
 3. 记录以上所有路径（**注意：不要读取任何文件内容，只记录路径**）
+
 4. 创建输出目录结构：
-   - `{PROJECT_ROOT}/outputs/be_planner/` — 计划产出
-   - `{PROJECT_ROOT}/outputs/be_api_dev/` — 开发经验
-   - `{PROJECT_ROOT}/outputs/be_tester_functional/` — 功能测试报告
-   - `{PROJECT_ROOT}/outputs/be_tester_performance/` — 性能测试报告
-   - `{PROJECT_ROOT}/outputs/be_tester_security/` — 安全测试报告
-   - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
-5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
-6. 确认项目代码目录：`{PROJECT_ROOT}/project/`（如不存在则创建）
-7. **确认 Agent Registry 机制**（见下方"Agent ID 收集"章节）
-8. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个接口"）
+   - `./backend/outputs/be_planner/` — 计划产出
+   - `./backend/outputs/be_api_dev/` — 开发经验
+   - `./backend/outputs/be_tester_functional/` — 功能测试报告
+   - `./backend/outputs/be_tester_performance/` — 性能测试报告
+   - `./backend/outputs/be_tester_security/` — 安全测试报告
+   - `./backend/outputs/agent-registry/` — Agent ID 注册
+   - `./backend/project/` — 项目代码目录
+
+5. 创建日志文件 `./backend/outputs/main-log.md`，写入项目信息
+
+6. **确认 Agent Registry 机制**（见下方"Agent ID 收集"章节）
+
+7. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个接口"）
 
 **日志写入**：
 ```
@@ -60,7 +69,8 @@
 - {yymmdd hhmm} 安全架构：{SECURITY_FILE}
 - {yymmdd hhmm} 实施路线图：{IMPLEMENTATION_ROADMAP_FILE}
 - {yymmdd hhmm} 批量大小：{BATCH_SIZE}
-- {yymmdd hhmm} 成本追踪：本轮预计调用 {N} 个Agent
+- {yymmdd hhmm} 输出目录：./backend/outputs
+- {yymmdd hhmm} 项目目录：./backend/project
 ```
 
 ---

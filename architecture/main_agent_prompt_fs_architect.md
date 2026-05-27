@@ -29,21 +29,29 @@
 ### 2. 初始化
 
 1. 用户会提供需求文档路径（PRD/功能需求/产品文档）
-2. 确认输出目录路径，记为 `PROJECT_ROOT`
+
+2. **固定路径配置**（无需用户提供）：
+   - `PROJECT_ROOT = ./architecture`（架构主代理文件夹路径）
+   - `OUTPUT_DIR = ./architecture/outputs`（输出目录）
+   - `PROJECT_DIR = ./architecture/project`（项目代码目录）
+
 3. 确认需求文件路径，记为 `REQUIREMENT_FILE`（**注意：不要读取需求文件内容，只记录路径**；但需确认文件存在且可读，使用 Read 工具读取第1行做存在性校验即可）
-4. 设置 `ARCH_ROOT = PROJECT_ROOT`（架构输出根目录缩写，用于后续引用）
-5. 创建输出目录结构：
-   - `{PROJECT_ROOT}/outputs/` — 架构设计文档总目录
-   - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
-   - `{PROJECT_ROOT}/outputs/artifacts/` — 可执行制品
-5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
+
+4. 创建输出目录结构：
+   - `./architecture/outputs/` — 架构设计文档总目录
+   - `./architecture/outputs/agent-registry/` — Agent ID 注册
+   - `./architecture/outputs/artifacts/` — 可执行制品
+   - `./architecture/project/` — 项目代码目录
+
+5. 创建日志文件 `./architecture/outputs/main-log.md`，写入项目信息
+
 6. **状态检查**：如 main-log.md 已有内容（断点续传），读取最后 30 行确认当前阶段，跳到对应 Phase 继续；如全新启动，标注 `- {yymmdd hhmm} 状态检查：全新启动`
 
 **日志写入**：
 ```
 - {yymmdd hhmm} 架构设计启动，需求：{REQUIREMENT_FILE}
-- {yymmdd hhmm} 输出目录：{PROJECT_ROOT}
-- {yymmdd hhmm} 成本追踪：本轮预计调用 {N} 个Agent
+- {yymmdd hhmm} 输出目录：./architecture/outputs
+- {yymmdd hhmm} 项目目录：./architecture/project
 ```
 
 ---

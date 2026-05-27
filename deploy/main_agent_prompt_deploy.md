@@ -45,18 +45,25 @@
    - **基础设施架构文档路径**（architecture 产出的 `infra-architecture.md`），记为 `INFRA_FILE`
    - **安全架构文档路径**（architecture 产出的 `security-architecture.md`），记为 `SECURITY_FILE`
    - **实施路线图路径**（architecture 产出的 `implementation-roadmap.md`），记为 `IMPLEMENTATION_ROADMAP_FILE`
-    - **前端项目根目录**，记为 `FRONTEND_ROOT`
-    - **后端项目根目录**，记为 `BACKEND_ROOT`
-    - **Flutter 项目根目录**（如无则不传），记为 `FLUTTER_ROOT`
-    - **区块链项目根目录**（如无则不传），记为 `BLOCKCHAIN_ROOT`
-    - **区块链合约 ABI 目录**（如无区块链项目则不传），记为 `BLOCKCHAIN_ABI_DIR`
-    - **部署方案根目录**，记为 `DEPLOY_ROOT`（默认新建 `{项目父目录}/deploy/` 目录）
-2. 创建输出目录结构：
-   - `{DEPLOY_ROOT}/outputs/deploy_planner/` — 部署计划产出
-   - `{DEPLOY_ROOT}/outputs/deploy_infra/` — 基础设施配置产出
-   - `{DEPLOY_ROOT}/outputs/deploy_verifier/` — 部署验证报告
-   - `{DEPLOY_ROOT}/outputs/agent-registry/` — Agent ID 注册
-3. 创建日志文件 `{DEPLOY_ROOT}/outputs/main-log.md`
+
+2. **固定路径配置**（无需用户提供）：
+   - `PROJECT_ROOT = ./deploy`（部署主代理文件夹路径）
+   - `OUTPUT_DIR = ./deploy/outputs`（输出目录）
+   - `PROJECT_DIR = ./deploy/project`（项目代码目录）
+   - `DEPLOY_ROOT = ./deploy`（部署方案根目录）
+   - `FRONTEND_ROOT = ./frontend`（前端项目路径）
+   - `BACKEND_ROOT = ./backend`（后端项目路径）
+   - `FLUTTER_ROOT = ./flutter`（Flutter项目路径）
+   - `BLOCKCHAIN_ROOT = ./blockchain`（区块链项目路径）
+
+3. 创建输出目录结构：
+   - `./deploy/outputs/deploy_planner/` — 部署计划产出
+   - `./deploy/outputs/deploy_infra/` — 基础设施配置产出
+   - `./deploy/outputs/deploy_verifier/` — 部署验证报告
+   - `./deploy/outputs/agent-registry/` — Agent ID 注册
+   - `./deploy/project/` — 项目代码目录
+
+4. 创建日志文件 `./deploy/outputs/main-log.md`
 
 **日志写入**：
 ```
@@ -65,12 +72,12 @@
 - {yymmdd hhmm} 基础设施架构：{INFRA_FILE}
 - {yymmdd hhmm} 安全架构：{SECURITY_FILE}
 - {yymmdd hhmm} 实施路线图：{IMPLEMENTATION_ROADMAP_FILE}
-- {yymmdd hhmm} 前端项目：{FRONTEND_ROOT}
-- {yymmdd hhmm} 后端项目：{BACKEND_ROOT}
-- {yymmdd hhmm} Flutter 项目：{FLUTTER_ROOT}（如无则标记 N/A）
-- {yymmdd hhmm} 区块链项目：{BLOCKCHAIN_ROOT}（如无则标记 N/A）
-- {yymmdd hhmm} 区块链合约 ABI 目录：{BLOCKCHAIN_ABI_DIR}（如无则标记 N/A）
-- {yymmdd hhmm} 部署方案目录：{DEPLOY_ROOT}
+- {yymmdd hhmm} 前端项目：./frontend
+- {yymmdd hhmm} 后端项目：./backend
+- {yymmdd hhmm} Flutter 项目：./flutter
+- {yymmdd hhmm} 区块链项目：./blockchain
+- {yymmdd hhmm} 输出目录：./deploy/outputs
+- {yymmdd hhmm} 项目目录：./deploy/project
 ```
 
 ---

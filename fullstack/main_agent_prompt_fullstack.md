@@ -33,10 +33,6 @@
 ### Step 1: 初始化
 
 1. 用户会提供以下信息：
-   - **前端项目根目录**，记为 `FRONTEND_ROOT`
-   - **后端项目根目录**，记为 `BACKEND_ROOT`
-   - **Flutter 项目根目录**（如无 Flutter 项目则不传），记为 `FLUTTER_ROOT`
-   - **区块链项目根目录**（如无区块链项目则不传），记为 `BLOCKCHAIN_ROOT`
    - **UI/UX 架构文档路径**（architecture 产出的 `ui-ux-architecture.md`），记为 `UI_UX_FILE`
    - **API 契约文档路径**（architecture 产出的 `api-contract.md`），记为 `CONTRACT_FILE`
    - **技术栈文档路径**（architecture 产出的 `tech-stack.md`），记为 `TECH_STACK_FILE`
@@ -44,31 +40,38 @@
    - **基础设施架构文档路径**（architecture 产出的 `infra-architecture.md`），记为 `INFRA_FILE`
    - **安全架构文档路径**（architecture 产出的 `security-architecture.md`），记为 `SECURITY_FILE`
    - **实施路线图路径**（architecture 产出的 `implementation-roadmap.md`），记为 `IMPLEMENTATION_ROADMAP_FILE`
-   - **前端经验库路径**（如存在），记为 `FRONTEND_LESSONS`
-   - **后端经验库路径**（如存在），记为 `BACKEND_LESSONS`
-    - **Flutter 经验库路径**（如存在），记为 `FLUTTER_LESSONS`
-    - **区块链经验库路径**（如存在），记为 `BLOCKCHAIN_LESSONS`
-    - **区块链合约 ABI 目录路径**（如无区块链项目则不传），记为 `BLOCKCHAIN_ABI_DIR`
-2. 记录以上所有路径（**注意：不要读取任何文件内容，只记录路径**）
-3. 创建输出目录结构：
-   - `{FRONTEND_ROOT}/outputs/fs_planner/` — 集成计划产出
-   - `{FRONTEND_ROOT}/outputs/fs_api_dev/` — 对接经验
-   - `{FRONTEND_ROOT}/outputs/fs_tester_contract/` — 契约测试报告
-   - `{FRONTEND_ROOT}/outputs/fs_tester_dataflow/` — 数据流测试报告
-   - `{FRONTEND_ROOT}/outputs/fs_tester_integration/` — 集成测试报告
-   - `{FRONTEND_ROOT}/outputs/agent-registry/` — Agent ID 注册
-4. 创建联调日志文件 `{FRONTEND_ROOT}/outputs/main-log.md`
-5. 确认前端 API 层输出目录，记为 `API_LAYER_DIR`（默认 `{FRONTEND_ROOT}/project/src/api/`）
-6. **探测并缓存 Agent ID 路径**（见下方"Agent ID 收集"章节）
-7. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次对接3个接口"）
+
+2. **固定路径配置**（无需用户提供）：
+   - `PROJECT_ROOT = ./fullstack`（联调主代理文件夹路径）
+   - `OUTPUT_DIR = ./fullstack/outputs`（输出目录）
+   - `PROJECT_DIR = ./fullstack/project`（项目代码目录）
+   - `FRONTEND_ROOT = ./frontend`（前端项目路径）
+   - `BACKEND_ROOT = ./backend`（后端项目路径）
+   - `FLUTTER_ROOT = ./flutter`（Flutter项目路径）
+   - `BLOCKCHAIN_ROOT = ./blockchain`（区块链项目路径）
+
+3. 记录以上所有路径（**注意：不要读取任何文件内容，只记录路径**）
+
+4. 创建输出目录结构：
+   - `./fullstack/outputs/fs_planner/` — 集成计划产出
+   - `./fullstack/outputs/fs_api_dev/` — 对接经验
+   - `./fullstack/outputs/fs_tester_contract/` — 契约测试报告
+   - `./fullstack/outputs/fs_tester_dataflow/` — 数据流测试报告
+   - `./fullstack/outputs/fs_tester_integration/` — 集成测试报告
+   - `./fullstack/outputs/agent-registry/` — Agent ID 注册
+   - `./fullstack/project/` — 项目代码目录
+
+5. 创建联调日志文件 `./fullstack/outputs/main-log.md`
+
+6. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次对接3个接口"）
 
 **日志写入**：
 ```
 - {yymmdd hhmm} 联调启动
-- {yymmdd hhmm} 前端项目：{FRONTEND_ROOT}
-- {yymmdd hhmm} 后端项目：{BACKEND_ROOT}
-- {yymmdd hhmm} Flutter 项目：{FLUTTER_ROOT}（如无则标记 N/A）
-- {yymmdd hhmm} 区块链项目：{BLOCKCHAIN_ROOT}（如无则标记 N/A）
+- {yymmdd hhmm} 前端项目：./frontend
+- {yymmdd hhmm} 后端项目：./backend
+- {yymmdd hhmm} Flutter 项目：./flutter
+- {yymmdd hhmm} 区块链项目：./blockchain
 - {yymmdd hhmm} UI/UX 架构：{UI_UX_FILE}
 - {yymmdd hhmm} API 契约：{CONTRACT_FILE}
 - {yymmdd hhmm} 技术栈：{TECH_STACK_FILE}
@@ -76,8 +79,8 @@
 - {yymmdd hhmm} 基础设施架构：{INFRA_FILE}
 - {yymmdd hhmm} 安全架构：{SECURITY_FILE}
 - {yymmdd hhmm} 实施路线图：{IMPLEMENTATION_ROADMAP_FILE}
-- {yymmdd hhmm} 前端经验库：{FRONTEND_LESSONS}
-- {yymmdd hhmm} 后端经验库：{BACKEND_LESSONS}
+- {yymmdd hhmm} 输出目录：./fullstack/outputs
+- {yymmdd hhmm} 项目目录：./fullstack/project
 - {yymmdd hhmm} Flutter 经验库：{FLUTTER_LESSONS}
 - {yymmdd hhmm} 区块链经验库：{BLOCKCHAIN_LESSONS}
 - {yymmdd hhmm} 区块链合约 ABI 目录：{BLOCKCHAIN_ABI_DIR}（如无则标记 N/A）

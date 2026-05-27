@@ -30,18 +30,26 @@
    - **安全架构文档路径**（architecture 产出的 `security-architecture.md`），记为 `SECURITY_FILE`
    - **UI/UX 架构文档路径**（architecture 产出的 `ui-ux-architecture.md`），记为 `UI_UX_FILE`
    - **实施路线图路径**（architecture 产出的 `implementation-roadmap.md`），记为 `IMPLEMENTATION_ROADMAP_FILE`
-2. 确认项目根目录路径，记为 `PROJECT_ROOT`
+
+2. **固定路径配置**（无需用户提供）：
+   - `PROJECT_ROOT = ./flutter`（Flutter主代理文件夹路径）
+   - `OUTPUT_DIR = ./flutter/outputs`（输出目录）
+   - `PROJECT_DIR = ./flutter/project`（项目代码目录）
+
 3. 记录以上所有路径（**注意：不要读取任何文件内容，只记录路径**）
+
 4. 创建输出目录结构：
-   - `{PROJECT_ROOT}/outputs/dg_flutter_planner/` — 计划产出
-   - `{PROJECT_ROOT}/outputs/dg_flutter_dev/` — 开发经验
-   - `{PROJECT_ROOT}/outputs/dg_flutter_tester_crossplatform/` — 跨端测试报告
-   - `{PROJECT_ROOT}/outputs/dg_flutter_tester_logic/` — 逻辑测试报告
-   - `{PROJECT_ROOT}/outputs/dg_flutter_tester_style/` — 样式测试报告
-   - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
-5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
-6. 确认项目代码目录：`{PROJECT_ROOT}/project/`（如不存在则创建）
-7. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个模块"）
+   - `./flutter/outputs/dg_flutter_planner/` — 计划产出
+   - `./flutter/outputs/dg_flutter_dev/` — 开发经验
+   - `./flutter/outputs/dg_flutter_tester_crossplatform/` — 跨端测试报告
+   - `./flutter/outputs/dg_flutter_tester_logic/` — 逻辑测试报告
+   - `./flutter/outputs/dg_flutter_tester_style/` — 样式测试报告
+   - `./flutter/outputs/agent-registry/` — Agent ID 注册
+   - `./flutter/project/` — 项目代码目录
+
+5. 创建日志文件 `./flutter/outputs/main-log.md`，写入项目信息
+
+6. **确认批量大小**，记为 `BATCH_SIZE`（默认值：1；用户可指定，如"一次开发3个模块"）
 
 **日志写入**：
 ```
@@ -52,7 +60,8 @@
 - {yymmdd hhmm} UI/UX 架构：{UI_UX_FILE}
 - {yymmdd hhmm} 实施路线图：{IMPLEMENTATION_ROADMAP_FILE}
 - {yymmdd hhmm} 批量大小：{BATCH_SIZE}
-- {yymmdd hhmm} 成本追踪：本轮预计调用 {N} 个Agent
+- {yymmdd hhmm} 输出目录：./flutter/outputs
+- {yymmdd hhmm} 项目目录：./flutter/project
 ```
 
 ---

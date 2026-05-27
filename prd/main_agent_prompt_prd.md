@@ -35,19 +35,23 @@
    - **竞品参考**（可选）
    - **目标用户描述**（可选）
 
-2. 确认输出目录路径，记为 `PROJECT_ROOT`
-3. 设置 `PRD_ROOT = PROJECT_ROOT`（PRD输出根目录缩写）
-4. 创建输出目录结构：
-   - `{PROJECT_ROOT}/outputs/` — PRD文档总目录
-   - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID 注册
-5. 创建日志文件 `{PROJECT_ROOT}/outputs/main-log.md`，写入项目信息
-6. **状态检查**：如 main-log.md 已有内容（断点续传），读取最后 30 行确认当前阶段，跳到对应 Phase 继续；如全新启动，标注 `- {yymmdd hhmm} 状态检查：全新启动`
+2. **固定路径配置**（无需用户提供）：
+   - `PROJECT_ROOT = ./prd`（PRD主代理文件夹路径）
+   - `OUTPUT_DIR = ./prd/outputs`（输出目录）
+   - `PROJECT_DIR = ./prd/project`（项目代码目录）
+
+3. 创建输出目录结构：
+   - `./prd/outputs/` — PRD文档总目录
+   - `./prd/outputs/agent-registry/` — Agent ID 注册
+   - `./prd/project/` — 项目代码目录
+4. 创建日志文件 `./prd/outputs/main-log.md`，写入项目信息
+5. **状态检查**：如 main-log.md 已有内容（断点续传），读取最后 30 行确认当前阶段，跳到对应 Phase 继续；如全新启动，标注 `- {yymmdd hhmm} 状态检查：全新启动`
 
 **日志写入**：
 ```
 - {yymmdd hhmm} PRD设计启动
-- {yymmdd hhmm} 输出目录：{PROJECT_ROOT}
-- {yymmdd hhmm} 成本追踪：本轮预计调用 {N} 个Agent
+- {yymmdd hhmm} 输出目录：./prd/outputs
+- {yymmdd hhmm} 项目目录：./prd/project
 ```
 
 ---

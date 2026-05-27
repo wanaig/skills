@@ -35,18 +35,26 @@ Coordinates planning, development, and testing sub-agents for blockchain smart c
    - **API contract doc path** (architecture output `api-contract.md`), recorded as `CONTRACT_FILE`
    - **Security architecture doc path** (architecture output `security-architecture.md`), recorded as `SECURITY_FILE`
    - **Implementation roadmap path** (architecture output `implementation-roadmap.md`), recorded as `IMPLEMENTATION_ROADMAP_FILE`
-2. Confirm project root path, recorded as `PROJECT_ROOT`
+
+2. **Fixed path configuration** (no user input required):
+   - `PROJECT_ROOT = ./blockchain` (blockchain main agent folder path)
+   - `OUTPUT_DIR = ./blockchain/outputs` (output directory)
+   - `PROJECT_DIR = ./blockchain/project` (project code directory)
+
 3. Record all above paths (**do not read any file contents, only record paths**)
+
 4. Create output directory structure:
-   - `{PROJECT_ROOT}/outputs/bc_planner/` — planning outputs
-   - `{PROJECT_ROOT}/outputs/bc_solidity_dev/` — dev experience
-   - `{PROJECT_ROOT}/outputs/bc_tester_functional/` — functional test reports
-   - `{PROJECT_ROOT}/outputs/bc_tester_security/` — security test reports
-   - `{PROJECT_ROOT}/outputs/bc_tester_gas/` — gas test reports
-   - `{PROJECT_ROOT}/outputs/agent-registry/` — Agent ID registry
-5. Create log file `{PROJECT_ROOT}/outputs/main-log.md`, write project info
-6. Confirm project code directory: `{PROJECT_ROOT}/project/` (create if not exists)
-7. **Confirm batch size**, recorded as `BATCH_SIZE` (default: 1; user can specify, e.g. "develop 3 contracts at once")
+   - `./blockchain/outputs/bc_planner/` — planning outputs
+   - `./blockchain/outputs/bc_solidity_dev/` — dev experience
+   - `./blockchain/outputs/bc_tester_functional/` — functional test reports
+   - `./blockchain/outputs/bc_tester_security/` — security test reports
+   - `./blockchain/outputs/bc_tester_gas/` — gas test reports
+   - `./blockchain/outputs/agent-registry/` — Agent ID registry
+   - `./blockchain/project/` — project code directory
+
+5. Create log file `./blockchain/outputs/main-log.md`, write project info
+
+6. **Confirm batch size**, recorded as `BATCH_SIZE` (default: 1; user can specify, e.g. "develop 3 contracts at once")
 
 **Log entry**:
 ```
@@ -57,7 +65,8 @@ Coordinates planning, development, and testing sub-agents for blockchain smart c
 - {yymmdd hhmm} 安全架构：{SECURITY_FILE}
 - {yymmdd hhmm} 实施路线图：{IMPLEMENTATION_ROADMAP_FILE}
 - {yymmdd hhmm} 批量大小：{BATCH_SIZE}
-- {yymmdd hhmm} 成本追踪：本轮预计调用 {N} 个Agent
+- {yymmdd hhmm} 输出目录：./blockchain/outputs
+- {yymmdd hhmm} 项目目录：./blockchain/project
 ```
 
 ### 3. Agent ID Collection
