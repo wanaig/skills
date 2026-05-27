@@ -1,8 +1,82 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "engineering": {
+    "error_recovery": {
+      "enabled": true,
+      "max_retries": 3,
+      "backoff_strategy": "exponential",
+      "checkpoint_enabled": true
+    },
+    "version_control": {
+      "enabled": true,
+      "auto_commit": true,
+      "commit_frequency": "per_batch",
+      "branch_strategy": "feature/develop/main"
+    },
+    "test_coverage": {
+      "enabled": true,
+      "minimum_coverage": 80,
+      "target_coverage": 90,
+      "block_on_failure": true
+    },
+    "code_quality": {
+      "enabled": true,
+      "eslint": true,
+      "prettier": true,
+      "typescript": true,
+      "auto_fix": true
+    },
+    "performance": {
+      "enabled": true,
+      "baseline_collection": true,
+      "regression_detection": true,
+      "threshold": 20
+    },
+    "api_documentation": {
+      "enabled": true,
+      "format": "openapi",
+      "auto_generate": true,
+      "validation": true
+    },
+    "dependency_security": {
+      "enabled": true,
+      "vulnerability_scanning": true,
+      "license_checking": true,
+      "auto_update": false
+    },
+    "monitoring": {
+      "enabled": true,
+      "real_time": true,
+      "alerting": true,
+      "visualization": true
+    },
+    "configuration": {
+      "enabled": true,
+      "centralized": true,
+      "versioning": true,
+      "encryption": true
+    },
+    "internationalization": {
+      "enabled": true,
+      "default_language": "zh-CN",
+      "supported_languages": ["zh-CN", "en-US"]
+    },
+    "plugin_system": {
+      "enabled": true,
+      "hot_reload": true,
+      "sandbox": true,
+      "marketplace": true
+    },
+    "user_permissions": {
+      "enabled": true,
+      "rbac": true,
+      "audit_logging": true,
+      "mfa": false
+    }
+  },
   "permission": {
-    "edit": "ask",
-    "bash": "ask",
+    "edit": "allow",
+    "bash": "allow",
     "task": {
       "*": "allow"
     },
@@ -16,9 +90,12 @@
       "mode": "primary",
       "prompt": "{file:./prd/main_agent_prompt_prd.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -28,8 +105,14 @@
       "mode": "subagent",
       "prompt": "{file:./prd/agents/prd_business.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "prd-user": {
@@ -37,8 +120,14 @@
       "mode": "subagent",
       "prompt": "{file:./prd/agents/prd_user.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "prd-functional": {
@@ -46,8 +135,14 @@
       "mode": "subagent",
       "prompt": "{file:./prd/agents/prd_functional.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "prd-technical": {
@@ -55,8 +150,14 @@
       "mode": "subagent",
       "prompt": "{file:./prd/agents/prd_technical.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fs-architect": {
@@ -64,9 +165,12 @@
       "mode": "primary",
       "prompt": "{file:./architecture/main_agent_prompt_fs_architect.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -76,9 +180,12 @@
       "mode": "primary",
       "prompt": "{file:./frontend/main_agent_prompt_vue.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -88,9 +195,12 @@
       "mode": "primary",
       "prompt": "{file:./backend/main_agent_prompt.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -100,9 +210,12 @@
       "mode": "primary",
       "prompt": "{file:./flutter/main_agent_prompt_flutter.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -112,9 +225,12 @@
       "mode": "primary",
       "prompt": "{file:./blockchain/main_agent_prompt_blockchain.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -124,9 +240,12 @@
       "mode": "primary",
       "prompt": "{file:./fullstack/main_agent_prompt_fullstack.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -136,9 +255,12 @@
       "mode": "primary",
       "prompt": "{file:./deploy/main_agent_prompt_deploy.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "ask",
+        "edit": "allow",
+        "bash": "allow",
         "task": {
+          "*": "allow"
+        },
+        "skill": {
           "*": "allow"
         }
       }
@@ -148,8 +270,14 @@
       "mode": "subagent",
       "prompt": "{file:./architecture/agents/fa_techstack.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fa-data": {
@@ -157,8 +285,14 @@
       "mode": "subagent",
       "prompt": "{file:./architecture/agents/fa_data.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fa-infra": {
@@ -166,8 +300,14 @@
       "mode": "subagent",
       "prompt": "{file:./architecture/agents/fa_infra.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fa-security": {
@@ -175,8 +315,14 @@
       "mode": "subagent",
       "prompt": "{file:./architecture/agents/fa_security.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fa-api-design": {
@@ -184,8 +330,14 @@
       "mode": "subagent",
       "prompt": "{file:./architecture/agents/fa_api_design.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fa-uiux": {
@@ -193,8 +345,14 @@
       "mode": "subagent",
       "prompt": "{file:./architecture/agents/fa_uiux.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "deny"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-vue-planner": {
@@ -203,7 +361,13 @@
       "prompt": "{file:./frontend/agents/dg_vue_planner.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-frontend-vue-dev": {
@@ -212,7 +376,13 @@
       "prompt": "{file:./frontend/agents/dg_frontend_vue_dev.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-vue-tester-component": {
@@ -220,8 +390,14 @@
       "mode": "subagent",
       "prompt": "{file:./frontend/agents/dg_vue_tester_component.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-vue-tester-logic": {
@@ -229,8 +405,14 @@
       "mode": "subagent",
       "prompt": "{file:./frontend/agents/dg_vue_tester_logic.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-vue-tester-style": {
@@ -238,8 +420,14 @@
       "mode": "subagent",
       "prompt": "{file:./frontend/agents/dg_vue_tester_style.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "be-planner": {
@@ -248,7 +436,13 @@
       "prompt": "{file:./backend/agents/be_planner.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "be-api-dev": {
@@ -257,7 +451,13 @@
       "prompt": "{file:./backend/agents/be_api_dev.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "be-tester-functional": {
@@ -265,8 +465,14 @@
       "mode": "subagent",
       "prompt": "{file:./backend/agents/be_tester_functional.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "be-tester-performance": {
@@ -274,8 +480,14 @@
       "mode": "subagent",
       "prompt": "{file:./backend/agents/be_tester_performance.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "be-tester-security": {
@@ -283,8 +495,14 @@
       "mode": "subagent",
       "prompt": "{file:./backend/agents/be_tester_security.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-flutter-planner": {
@@ -293,7 +511,13 @@
       "prompt": "{file:./flutter/agents/dg_flutter_planner.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-flutter-dev": {
@@ -302,7 +526,13 @@
       "prompt": "{file:./flutter/agents/dg_flutter_dev.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-flutter-tester-crossplatform": {
@@ -310,8 +540,14 @@
       "mode": "subagent",
       "prompt": "{file:./flutter/agents/dg_flutter_tester_crossplatform.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-flutter-tester-logic": {
@@ -319,8 +555,14 @@
       "mode": "subagent",
       "prompt": "{file:./flutter/agents/dg_flutter_tester_logic.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "dg-flutter-tester-style": {
@@ -328,8 +570,14 @@
       "mode": "subagent",
       "prompt": "{file:./flutter/agents/dg_flutter_tester_style.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "bc-planner": {
@@ -338,7 +586,13 @@
       "prompt": "{file:./blockchain/agents/bc_planner.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "bc-solidity-dev": {
@@ -347,7 +601,13 @@
       "prompt": "{file:./blockchain/agents/bc_solidity_dev.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "bc-tester-functional": {
@@ -355,8 +615,14 @@
       "mode": "subagent",
       "prompt": "{file:./blockchain/agents/bc_tester_functional.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "bc-tester-security": {
@@ -364,8 +630,14 @@
       "mode": "subagent",
       "prompt": "{file:./blockchain/agents/bc_tester_security.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "bc-tester-gas": {
@@ -373,8 +645,14 @@
       "mode": "subagent",
       "prompt": "{file:./blockchain/agents/bc_tester_gas.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fs-planner": {
@@ -383,7 +661,13 @@
       "prompt": "{file:./fullstack/agents/fs_planner.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fs-api-dev": {
@@ -392,7 +676,13 @@
       "prompt": "{file:./fullstack/agents/fs_api_dev.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fs-tester-contract": {
@@ -400,8 +690,14 @@
       "mode": "subagent",
       "prompt": "{file:./fullstack/agents/fs_tester_contract.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fs-tester-dataflow": {
@@ -409,8 +705,14 @@
       "mode": "subagent",
       "prompt": "{file:./fullstack/agents/fs_tester_dataflow.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "fs-tester-integration": {
@@ -418,8 +720,14 @@
       "mode": "subagent",
       "prompt": "{file:./fullstack/agents/fs_tester_integration.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "deploy-planner": {
@@ -428,7 +736,13 @@
       "prompt": "{file:./deploy/agents/deploy_planner.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "deploy-infra": {
@@ -437,7 +751,13 @@
       "prompt": "{file:./deploy/agents/deploy_infra.md}",
       "permission": {
         "edit": "allow",
-        "bash": "allow"
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     },
     "deploy-verifier": {
@@ -445,8 +765,14 @@
       "mode": "subagent",
       "prompt": "{file:./deploy/agents/deploy_verifier.md}",
       "permission": {
-        "edit": "deny",
-        "bash": "allow"
+        "edit": "allow",
+        "bash": "allow",
+        "task": {
+          "*": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
       }
     }
   }

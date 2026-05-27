@@ -219,9 +219,151 @@ opencode
 }
 ```
 
+## 工程化改进
+
+系统已完成全面的工程化改进，包括以下12个方面：
+
+### P0 - 关键缺陷修复
+
+| 改进项 | 文档 | 状态 |
+|--------|------|------|
+| 错误恢复机制 | [error-recovery.md](./docs/error-recovery.md) | ✅ 完成 |
+| 版本控制集成 | [version-control.md](./docs/version-control.md) | ✅ 完成 |
+| 测试覆盖率保障 | [test-coverage.md](./docs/test-coverage.md) | ✅ 完成 |
+
+### P1 - 重要缺陷修复
+
+| 改进项 | 文档 | 状态 |
+|--------|------|------|
+| 代码质量工具集成 | [code-quality.md](./docs/code-quality.md) | ✅ 完成 |
+| 性能基准测试 | [performance-benchmark.md](./docs/performance-benchmark.md) | ✅ 完成 |
+| API文档自动生成 | [api-documentation.md](./docs/api-documentation.md) | ✅ 完成 |
+| 依赖安全检查 | [dependency-security.md](./docs/dependency-security.md) | ✅ 完成 |
+
+### P2 - 优化建议实现
+
+| 改进项 | 文档 | 状态 |
+|--------|------|------|
+| 监控告警系统 | [monitoring-alerting.md](./docs/monitoring-alerting.md) | ✅ 完成 |
+| 配置管理优化 | [configuration-management.md](./docs/configuration-management.md) | ✅ 完成 |
+| 国际化支持 | [internationalization.md](./docs/internationalization.md) | ✅ 完成 |
+| 插件机制 | [plugin-system.md](./docs/plugin-system.md) | ✅ 完成 |
+| 用户权限管理 | [user-permissions.md](./docs/user-permissions.md) | ✅ 完成 |
+
+### 工程化配置
+
+在 `opencode.json` 中配置工程化功能：
+
+```json
+{
+  "engineering": {
+    "error_recovery": {
+      "enabled": true,
+      "max_retries": 3,
+      "checkpoint_enabled": true
+    },
+    "version_control": {
+      "enabled": true,
+      "auto_commit": true
+    },
+    "test_coverage": {
+      "enabled": true,
+      "minimum_coverage": 80
+    },
+    "code_quality": {
+      "enabled": true,
+      "eslint": true,
+      "prettier": true
+    },
+    "performance": {
+      "enabled": true,
+      "regression_detection": true
+    },
+    "api_documentation": {
+      "enabled": true,
+      "auto_generate": true
+    },
+    "dependency_security": {
+      "enabled": true,
+      "vulnerability_scanning": true
+    },
+    "monitoring": {
+      "enabled": true,
+      "alerting": true
+    },
+    "configuration": {
+      "enabled": true,
+      "centralized": true
+    },
+    "internationalization": {
+      "enabled": true,
+      "default_language": "zh-CN"
+    },
+    "plugin_system": {
+      "enabled": true,
+      "hot_reload": true
+    },
+    "user_permissions": {
+      "enabled": true,
+      "rbac": true
+    }
+  }
+}
+```
+
+## 卡住问题解决方案
+
+如果系统卡住不动，请参考以下文档：
+
+| 问题 | 文档 | 说明 |
+|------|------|------|
+| 通用故障 | [troubleshooting.md](./docs/troubleshooting.md) | 通用故障排除指南 |
+| 卡住诊断 | [stuck-diagnosis.md](./docs/stuck-diagnosis.md) | 卡住问题诊断 |
+| 超时恢复 | [timeout-recovery.md](./docs/timeout-recovery.md) | 超时检测与恢复 |
+| 优化方案 | [stuck-optimization.md](./docs/stuck-optimization.md) | 卡住问题优化 |
+
+### 快速恢复命令
+
+```bash
+# 1. 检查最新日志
+tail -20 {PROJECT_ROOT}/outputs/main-log.md
+
+# 2. 检查超时记录
+grep "timeout" {PROJECT_ROOT}/outputs/events.jsonl
+
+# 3. 从检查点恢复
+opencode
+# 选择主代理，系统自动恢复
+
+# 4. 手动跳过卡住任务
+vi {PROJECT_ROOT}/outputs/checkpoint.json
+# 修改 currentBatch 增加1
+
+# 5. 重置状态重新开始
+rm {PROJECT_ROOT}/outputs/checkpoint.json
+rm -rf {PROJECT_ROOT}/outputs/agent-registry/
+```
+
 ## 相关链接
 
 - [OpenCode 文档](https://opencode.ai/docs)
 - [Harness Engineering 项目](./README.md)
 - [设计原理](./docs/design_principles.md)
 - [系统架构](./docs/architecture.md)
+- [改进计划](./docs/improvement-plan.md)
+- [错误恢复](./docs/error-recovery.md)
+- [版本控制](./docs/version-control.md)
+- [测试覆盖率](./docs/test-coverage.md)
+- [代码质量](./docs/code-quality.md)
+- [性能基准](./docs/performance-benchmark.md)
+- [API文档](./docs/api-documentation.md)
+- [依赖安全](./docs/dependency-security.md)
+- [监控告警](./docs/monitoring-alerting.md)
+- [配置管理](./docs/configuration-management.md)
+- [国际化](./docs/internationalization.md)
+- [插件机制](./docs/plugin-system.md)
+- [用户权限](./docs/user-permissions.md)
+- [故障排除](./docs/troubleshooting.md)
+- [卡住诊断](./docs/stuck-diagnosis.md)
+- [超时恢复](./docs/timeout-recovery.md)
+- [卡住优化](./docs/stuck-optimization.md)
