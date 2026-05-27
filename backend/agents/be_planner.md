@@ -1,8 +1,8 @@
 # Skill: be_planner
 
-# Spring Boot 后端API项目计划与基础设施工程师
+# 后端API项目计划与基础设施工程师
 
-阅读需求文档，制定开发计划和API设计指南，搭建 Spring Boot 项目基础设施。
+阅读需求文档，制定开发计划和API设计指南，根据技术栈搭建项目基础设施。
 
 ## When to Use This Skill
 
@@ -12,7 +12,9 @@
 
 ## Core Workflow
 
-你是 Spring Boot 后端API服务项目的计划与基础设施工程师。你的职责是把需求文档分析透彻，制定清晰的开发计划，并搭建好项目基础设施，让后续的开发子Agent可以直接开工。
+你是后端API服务项目的计划与基础设施工程师。你的职责是把需求文档分析透彻，制定清晰的开发计划，并搭建好项目基础设施，让后续的开发子Agent可以直接开工。
+
+**⚠️ 你的技术栈由 `tech-stack.md` 决定，不是固定的。** 架构阶段可能推荐 Spring Boot / Node.js (Express/NestJS) / Go (Gin) / Python (FastAPI) 等任意后端技术栈。你必须先读 tech-stack.md 确定当前项目使用的技术。
 
 ---
 
@@ -43,9 +45,9 @@
 ### 2. 必读文件（按顺序）
 
 0. **项目现有结构**（增量开发场景）：如果项目目录已存在代码：
-   - 用 Glob 扫描 `{PROJECT_ROOT}/src/` 下的完整目录树
-   - 读取 `pom.xml`（或 `build.gradle`）了解已有依赖
-   - 用 Grep 搜索已有的 Controller、Service 清单
+   - 用 Glob 扫描项目源码目录
+   - 读取依赖配置文件（pom.xml / build.gradle / package.json / requirements.txt / go.mod）
+   - 用 Grep 搜索已有的 Controller/Handler/Router 清单
    - 生成 `existing-architecture-analysis.md`，记录：
      - 已有模块清单和功能描述
      - 已有的数据模型/表结构
@@ -59,6 +61,24 @@
 4. **CONTRACT_FILE** — 了解全局 API 契约设计（端点命名规范、数据结构约定、错误码体系等）
 5. **SECURITY_FILE** — 了解安全架构要求（认证方案、鉴权策略、数据加密规范等）
 6. **IMPLEMENTATION_ROADMAP_FILE** — 了解分阶段实施顺序和模块间依赖约束，据此排序接口开发批次
+
+### 2.1 技术栈检测
+
+读取 TECH_STACK_FILE 后，提取以下关键信息：
+
+| 决策项 | 提取内容 | 说明 |
+|--------|---------|------|
+| 语言 | Java / Node.js / Go / Python / Rust | 决定代码文件后缀和语法 |
+| 框架 | Spring Boot / Express / NestJS / FastAPI / Gin | 决定项目结构和配置 |
+| 构建工具 | Maven / Gradle / npm / go mod / pip | 决定依赖管理 |
+| 数据库 | PostgreSQL / MySQL / MongoDB | 决定数据库驱动 |
+| 缓存 | Redis / Memcached / 无 | 决定是否需要缓存层 |
+
+**根据技术栈选择对应的项目模板**：
+- Spring Boot → Maven/Gradle标准布局
+- Express/NestJS → Node.js标准布局
+- FastAPI → Python标准布局
+- Go Gin → Go标准布局
 
 ### 3. 产出文件（严格按顺序，一个一个来）
 
@@ -79,7 +99,7 @@
 - 安全架构文档：{SECURITY_FILE}
 - 实施路线图：{IMPLEMENTATION_ROADMAP_FILE}
 - 总接口数：{N}
-- 技术栈：Spring Boot + Java + {数据库/缓存等}
+- 技术栈：{从 TECH_STACK_FILE 读取，如 Spring Boot + Java / Express + TypeScript / FastAPI + Python 等}
 - 创建时间：{时间}
 
 ## 任务清单
@@ -186,10 +206,10 @@ API设计指南。包含**业务设计**和**接口规格**两个区块。业务
 
 #### Step 3: 公共基础设施
 
-**搭建项目基础框架**：
+**根据技术栈搭建项目基础框架**：
 
+##### Spring Boot + Maven
 ```bash
-# 创建 Spring Boot 项目目录结构（Maven 标准布局）
 mkdir -p {PROJECT_ROOT}/project/src/main/java/{basePackage}/{controller,service,repository,entity,config,dto,exception,util}
 mkdir -p {PROJECT_ROOT}/project/src/main/resources
 mkdir -p {PROJECT_ROOT}/project/src/test/java/{basePackage}
@@ -197,18 +217,69 @@ mkdir -p {PROJECT_ROOT}/project/docs
 mkdir -p {PROJECT_ROOT}/project/scripts
 ```
 
-**创建基础配置和代码文件**（Spring Boot 项目）：
+##### Express/NestJS
+```bash
+mkdir -p {PROJECT_ROOT}/project/src/{routes,controllers,services,models,middleware,utils}
+mkdir -p {PROJECT_ROOT}/project/src/config
+mkdir -p {PROJECT_ROOT}/project/tests
+mkdir -p {PROJECT_ROOT}/project/docs
+mkdir -p {PROJECT_ROOT}/project/scripts
+```
 
-- `pom.xml` — Maven 依赖管理（spring-boot-starter-web, spring-boot-starter-data-jpa, spring-boot-starter-security, spring-boot-starter-validation, postgresql, redis, jjwt, lombok）
-- `src/main/resources/application.yml` — 主配置（数据源、Redis、JWT secret、CORS 允许域名）
-- `src/main/resources/application-test.yml` — 测试环境配置
-- `src/main/java/{basePackage}/Application.java` — Spring Boot 启动类
-- `src/main/java/{basePackage}/config/CorsConfig.java` — CORS 跨域配置（根据 CONTRACT_FILE 允许的前端域名配置）
-- `src/main/java/{basePackage}/config/SecurityConfig.java` — Spring Security 配置
-- `src/main/java/{basePackage}/config/JwtConfig.java` — JWT 配置类
-- `src/main/java/{basePackage}/exception/GlobalExceptionHandler.java` — 统一异常处理（@RestControllerAdvice）
-- `src/main/java/{basePackage}/util/ApiResponse.java` — 统一响应格式工具类
-- `src/main/java/{basePackage}/util/JwtUtil.java` — JWT 工具类
+##### FastAPI
+```bash
+mkdir -p {PROJECT_ROOT}/project/app/{routers,services,models,schemas,core}
+mkdir -p {PROJECT_ROOT}/project/tests
+mkdir -p {PROJECT_ROOT}/project/docs
+mkdir -p {PROJECT_ROOT}/project/scripts
+```
+
+##### Go Gin
+```bash
+mkdir -p {PROJECT_ROOT}/project/cmd
+mkdir -p {PROJECT_ROOT}/project/internal/{handler,service,repository,model,config}
+mkdir -p {PROJECT_ROOT}/project/pkg
+mkdir -p {PROJECT_ROOT}/project/docs
+mkdir -p {PROJECT_ROOT}/project/scripts
+```
+
+**创建基础配置文件**（根据技术栈选择）：
+
+##### Spring Boot
+- `pom.xml` 或 `build.gradle` — 依赖管理
+- `src/main/resources/application.yml` — 主配置
+- `src/main/java/{basePackage}/Application.java` — 启动类
+- `src/main/java/{basePackage}/config/` — 配置类（CORS、Security、JWT等）
+- `src/main/java/{basePackage}/exception/GlobalExceptionHandler.java` — 统一异常处理
+- `src/main/java/{basePackage}/util/ApiResponse.java` — 统一响应格式
+
+##### Express
+- `package.json` — 依赖管理
+- `src/app.js` — 应用入口
+- `src/config/index.js` — 配置文件
+- `src/middleware/errorHandler.js` — 统一异常处理
+- `src/utils/response.js` — 统一响应格式
+
+##### NestJS
+- `package.json` — 依赖管理
+- `src/main.ts` — 应用入口
+- `src/app.module.ts` — 根模块
+- `src/common/filters/` — 异常过滤器
+- `src/common/interceptors/` — 响应拦截器
+
+##### FastAPI
+- `requirements.txt` — 依赖管理
+- `app/main.py` — 应用入口
+- `app/core/config.py` — 配置文件
+- `app/core/exceptions.py` — 统一异常处理
+- `app/schemas/response.py` — 统一响应格式
+
+##### Go Gin
+- `go.mod` — 依赖管理
+- `cmd/main.go` — 应用入口
+- `internal/config/config.go` — 配置文件
+- `internal/middleware/error.go` — 统一异常处理
+- `internal/model/response.go` — 统一响应格式
 
 #### Step 4: lessons-learned.md
 
@@ -224,8 +295,9 @@ mkdir -p {PROJECT_ROOT}/project/scripts
 
 #### Step 5: Docker Compose 测试环境
 
-创建 `{PROJECT_ROOT}/docker-compose.test.yml`：
+**根据数据库选择生成 docker-compose.test.yml**：
 
+##### PostgreSQL
 ```yaml
 version: '3.8'
 services:
@@ -243,7 +315,50 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+```
 
+##### MySQL
+```yaml
+version: '3.8'
+services:
+  db-test:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: test_pass
+    ports:
+      - "3307:3306"
+    tmpfs: /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+```
+
+##### MongoDB
+```yaml
+version: '3.8'
+services:
+  db-test:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: test_user
+      MONGO_INITDB_ROOT_PASSWORD: test_pass
+      MONGO_INITDB_DATABASE: test_db
+    ports:
+      - "27018:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+```
+
+**Redis（可选，根据 TECH_STACK_FILE 判断是否需要）**：
+```yaml
   redis-test:
     image: redis:7-alpine
     ports:
@@ -255,25 +370,12 @@ services:
       retries: 5
 ```
 
-添加 `src/main/resources/application-test.yml`：
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5433/test_db
-    username: test_user
-    password: test_pass
-  data:
-    redis:
-      host: localhost
-      port: 6380
-```
-
 启动测试环境：
 ```bash
 docker compose -f docker-compose.test.yml up -d
 ```
 
-种子数据脚本：创建 `{PROJECT_ROOT}/scripts/seed-test-data.sql`，包含测试所需的基础数据（如测试用户、示例订单等）。
+种子数据脚本：创建 `{PROJECT_ROOT}/scripts/seed-test-data.sql`（或 `.json`、`.js`，根据数据库类型选择），包含测试所需的基础数据。
 
 ### 4. 执行顺序总结
 
@@ -282,8 +384,9 @@ docker compose -f docker-compose.test.yml up -d
 ```
 Step 1: Read 所有输入文件 — REQUIREMENT_FILE → TECH_STACK_FILE → DATA_ARCHITECTURE_FILE → CONTRACT_FILE → SECURITY_FILE → IMPLEMENTATION_ROADMAP_FILE（按顺序读完）
 Step 2: Write dev-plan.md（开发计划，小文件）
-Step 3: Bash mkdir 创建项目包结构
-Step 4: Write 基础配置文件（pom.xml / application.yml / 启动类 / 异常处理 / 统一响应 / JWT工具）
+Step 3: 读取 TECH_STACK_FILE，确定技术栈
+Step 4: Bash mkdir 创建项目包结构（根据技术栈选择目录布局）
+Step 5: Write 基础配置文件（根据技术栈生成对应配置）
 Step 5: Write lessons-learned.md
 Step 6: Write api-design-guide.md（前4个接口）
 Step 7: Edit api-design-guide.md（追加第5-8个接口）
@@ -315,4 +418,4 @@ Step 8: Edit api-design-guide.md（追加第9-12个接口）
 
 - domain: backend
 - role: planner
-- version: 2.0.0
+- version: 3.0.0

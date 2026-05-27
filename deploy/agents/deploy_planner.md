@@ -25,7 +25,7 @@
 
 ### Step 2：必读文件（按顺序）
 
-1. **TECH_STACK_FILE** — 确认运行时环境（Java 版本、Spring Boot 版本、Node.js 版本（前端构建）等）、构建产物类型
+1. **TECH_STACK_FILE** — 确认运行时环境（语言版本、框架版本、构建工具等）、构建产物类型
 2. **INFRA_FILE** — 读取部署拓扑设计、中间件拓扑、CI/CD 流水线方案、环境策略（dev/test/staging/prod）
 3. **SECURITY_FILE** — 读取加密要求、TLS 配置、网络隔离策略、密钥管理方案
 4. **IMPLEMENTATION_ROADMAP_FILE** — 确认部署阶段任务和依赖关系

@@ -1,13 +1,15 @@
 # Skill: bc_planner
 
-# FISCO BCOS 区块链项目计划与基础设施工程师
+# 区块链项目计划与基础设施工程师
 
-Reads requirements documents and architecture design documents, formulates smart contract development plans and design guides, and sets up Solidity project infrastructure (Hardhat + FISCO BCOS configuration) so that downstream bc_solidity_dev sub-agents can start development immediately.
+Reads requirements documents and architecture design documents, formulates smart contract development plans and design guides, and sets up project infrastructure based on the tech stack so that downstream bc_solidity_dev sub-agents can start development immediately.
+
+**⚠️ Your tech stack is determined by `tech-stack.md`, not fixed.** The architecture phase may recommend different frameworks (Hardhat / Truffle / Foundry), Solidity versions, and blockchain targets. You must read tech-stack.md first to determine the current project's technology.
 
 ## When to Use This Skill
 
 - Formulating a blockchain development plan
-- Setting up a FISCO BCOS contract project
+- Setting up a contract project (Hardhat / Truffle / Foundry)
 - Creating development plans and engineering foundations for blockchain requirements
 
 ## Core Workflow
@@ -23,7 +25,19 @@ Confirm the following information (provided by master agent):
 - Implementation roadmap path (IMPLEMENTATION_ROADMAP_FILE)
 - Output directory (PROJECT_ROOT)
 
-### 2. FISCO BCOS On-Chain Decision Analysis
+### 1.1 Tech Stack Detection
+
+After reading TECH_STACK_FILE, extract the following key information:
+
+| Decision | Extraction | Notes |
+|----------|-----------|-------|
+| Framework | Hardhat / Truffle / Foundry / Remix | Determines project structure and compilation |
+| Solidity version | 0.8.x / 0.8.0 / other | Must match target blockchain compatibility |
+| Testing framework | Mocha+Chai / Hardhat built-in / Forge / Waffle | Determines test tooling |
+| Blockchain target | Ethereum / FISCO BCOS / Polygon / BSC / other | Determines specific constraints |
+| Library dependencies | OpenZeppelin / Solady / Custom | Determines import paths |
+
+### 2. On-Chain Decision Analysis
 
 Blockchain is not a silver bullet — not all data should go on-chain. Analyze requirements and make explicit on-chain decisions.
 
@@ -39,6 +53,8 @@ Blockchain is not a silver bullet — not all data should go on-chain. Analyze r
 - Data requiring frequent modification without audit needs (drafts, caches)
 - Privacy-sensitive data without trusted execution environments (plaintext on-chain)
 
+**Note**: The specific blockchain platform (Ethereum / FISCO BCOS / Polygon / BSC) is determined by TECH_STACK_FILE. The examples below use generic Solidity patterns that work across platforms.
+
 **On-chain decision template** (write at the beginning of contract-design-guide.md):
 
 | Business Module | On-Chain Decision | On-Chain Storage | Off-Chain Storage | Rationale |
@@ -52,15 +68,15 @@ Blockchain is not a silver bullet — not all data should go on-chain. Analyze r
 dev-plan.md content structure:
 
 ```markdown
-# FISCO BCOS 智能合约开发计划
+# 智能合约开发计划
 
 ## 项目技术基线
-- 区块链平台：FISCO BCOS v3.x
-- 合约语言：Solidity ^0.8.0
-- 开发框架：Hardhat
-- SDK 语言：Java（Spring Boot 后端集成）/ Node.js（Hardhat 部署脚本）
-- 共识机制：PBFT
-- 账户模型：国密 SM2 / ECDSA
+- 区块链平台：{从 TECH_STACK_FILE 读取，如 Ethereum / FISCO BCOS / Polygon / BSC}
+- 合约语言：Solidity {从 TECH_STACK_FILE 读取版本}
+- 开发框架：{从 TECH_STACK_FILE 读取，如 Hardhat / Truffle / Foundry}
+- SDK 语言：{根据框架和后端技术栈确定}
+- 共识机制：{根据区块链平台确定}
+- 账户模型：{根据区块链平台确定}
 
 ## 合约清单
 
@@ -89,10 +105,10 @@ Batch 2: ...
 contract-design-guide.md content structure:
 
 ```markdown
-# FISCO BCOS 合约设计指南
+# 合约设计指南
 
 ## 1. 编码规范
-- Solidity 版本：^0.8.0
+- Solidity 版本：{从 TECH_STACK_FILE 读取}
 - 命名规范：合约名 PascalCase，函数名 camelCase，常量 UPPER_CASE
 - 必须使用 NatSpec 注释格式（@notice, @param, @return, @dev）
 - 每个函数必须定义事件并在关键状态变更后触发
@@ -137,54 +153,81 @@ contract-design-guide.md content structure:
 
 ### 5. Set Up Project Infrastructure
 
-Use Bash to perform the following initialization:
+**根据技术栈搭建项目基础框架**：
 
+##### Hardhat
 ```bash
-# Create Hardhat project structure
 mkdir -p {PROJECT_ROOT}/project/contracts
 mkdir -p {PROJECT_ROOT}/project/test
 mkdir -p {PROJECT_ROOT}/project/scripts
 mkdir -p {PROJECT_ROOT}/project/artifacts
-
-# Initialize npm project
 cd {PROJECT_ROOT} && npm init -y
-
-# Install dependencies
-npm install --save-dev hardhat @nomiclabs/hardhat-waffle @nomiclabs/hardhat-ethers ethers @openzeppelin/contracts @fisco-bcos/api
-
-# Create hardhat.config.js (FISCO BCOS adapted)
+npm install --save-dev hardhat @nomiclabs/hardhat-waffle @nomiclabs/hardhat-ethers ethers @openzeppelin/contracts
 ```
 
 **hardhat.config.js template**:
-
 ```javascript
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-ethers");
 
 module.exports = {
   solidity: {
-    version: "0.8.19",
+    version: "{从 TECH_STACK_FILE 读取}",
     settings: {
       optimizer: { enabled: true, runs: 200 },
     },
   },
   networks: {
-    fisco: {
-      url: process.env.FISCO_NODE_URL || "http://127.0.0.1:8545",
-      chainId: 1,
-      gas: 300000000,
-      gasPrice: 1,
-      groupId: 1,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    },
-  },
-  paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts",
+    // 根据区块链平台配置网络
   },
 };
+```
+
+##### Truffle
+```bash
+mkdir -p {PROJECT_ROOT}/project/contracts
+mkdir -p {PROJECT_ROOT}/project/migrations
+mkdir -p {PROJECT_ROOT}/project/test
+cd {PROJECT_ROOT} && npm init -y
+npm install --save-dev truffle @openzeppelin/contracts
+truffle init
+```
+
+**truffle-config.js template**:
+```javascript
+module.exports = {
+  compilers: {
+    solc: {
+      version: "{从 TECH_STACK_FILE 读取}",
+      settings: {
+        optimizer: { enabled: true, runs: 200 }
+      }
+    }
+  },
+  networks: {
+    // 根据区块链平台配置网络
+  }
+};
+```
+
+##### Foundry
+```bash
+cd {PROJECT_ROOT} && forge init project
+cd project
+forge install OpenZeppelin/openzeppelin-contracts
+```
+
+**foundry.toml template**:
+```toml
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "{从 TECH_STACK_FILE 读取}"
+
+[profile.default.optimizer]
+enabled = true
+runs = 200
 ```
 
 ### 6. Return File Paths
@@ -194,7 +237,7 @@ After all outputs are complete, **only return the file path list**, not file con
 ```
 - dev-plan: {PROJECT_ROOT}/outputs/bc_planner/dev-plan.md
 - contract-design-guide: {PROJECT_ROOT}/outputs/bc_planner/contract-design-guide.md
-- 项目基础设施：{PROJECT_ROOT}/project/（含 contracts/, test/, scripts/ 目录 + hardhat.config.js + package.json）
+- 项目基础设施：{PROJECT_ROOT}/project/（含 contracts/, test/, scripts/ 目录 + 配置文件 + package.json）
 ```
 
 ## Core Principles
@@ -211,7 +254,7 @@ After all outputs are complete, **only return the file path list**, not file con
 1. **Step-by-step execution**: Don't generate all files at once, create them individually in order and save immediately
 2. **Return only paths**: Don't return file contents to master agent (master agent doesn't read content)
 3. **Contract granularity**: Each contract 80-200 lines recommended, complex contracts can be appropriately relaxed
-4. **FISCO BCOS compatibility**: Don't use EVM features unsupported by FISCO BCOS (e.g. Shanghai fork PUSH0)
+4. **Blockchain compatibility**: Check TECH_STACK_FILE for target blockchain constraints. Don't use EVM features unsupported by the target chain
 5. **IDE compatibility**: hardhat.config.js path configuration ensures normal IDE code completion
 
 ## Tags
