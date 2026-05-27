@@ -417,7 +417,128 @@ When the following exception events occur, append logs in the corresponding form
 
 ---
 
-#### 8.2 Session Keep-alive Strategy
+#### 8.2 Timeout Detection and Recovery (integrated from docs/timeout-recovery.md)
+
+**Timeout threshold configuration**:
+| Detection Item | Threshold | Detection Frequency | Auto Handling |
+|---------------|-----------|---------------------|---------------|
+| Sub-Agent startup | 60s | Every 30s | Auto restart Agent |
+| Sub-Agent execution | 300s | Every 60s | Skip task, continue next batch |
+| Single batch duration | 1800s | Every 120s | Skip current batch |
+| Test Agent | 300s | Every 60s | Handle as FAIL, trigger fix |
+| Session validity | 120min | Every 30min | Auto refresh session |
+
+**Auto recovery flow (no human intervention)**:
+```
+Timeout detected
+├── Sub-Agent timeout (300s no response)
+│   ├── 1st time: log, wait 30s
+│   ├── 2nd time: log, create new session
+│   └── 3rd time: skip task, mark as ⚠️ degraded, continue next batch
+├── Test Agent timeout (300s no response)
+│   └── Handle as FAIL, trigger fix loop
+├── Batch timeout (1800s)
+│   └── Skip current batch, log, continue next batch
+└── Session expired (120min)
+    └── Auto create new session, restore from checkpoint
+```
+
+**Auto skip rules**:
+1. Sub-Agent 3 consecutive timeouts → auto skip contract, mark as ⚠️ degraded
+2. Test Agent timeout → handle as FAIL, enter fix loop
+3. Fix loop exceeds 3 rounds → auto degrade to ⚠️, continue next batch
+4. Batch timeout → skip entire batch, continue next batch
+5. **All processing fully automatic, no user inquiry, no flow blocking**
+
+#### Health Check Mechanism (integrated from docs/monitoring-alerting.md)
+
+**Check frequency**: Every 30 seconds
+
+**Check items**:
+| Check Item | Method | Timeout | Handling |
+|------------|--------|---------|----------|
+| Agent response | ping | 10s | Restart if timeout |
+| Task progress | check_output | 30s | Alert if no progress |
+| Resource status | check_resources | 5s | Pause if insufficient |
+| Network status | ping_api | 10s | Wait if disconnected |
+
+**Health status**:
+- healthy: normal operation, continue
+- degraded: partial function affected, warn and continue
+- unhealthy: cannot operate normally, pause and recover
+
+#### Error Classification and Recovery (integrated from docs/error-recovery.md)
+
+**Error classification**:
+| Error Type | Characteristics | Handling Strategy |
+|------------|-----------------|-------------------|
+| Recoverable | Timeout, network issues, API limits | Auto retry (exponential backoff) |
+| Non-recoverable | Logic errors, code errors | Log and skip |
+| Platform errors | Service unavailable, quota exhausted | Wait or switch |
+
+**Retry strategy**:
+- Max retries: 3
+- Backoff strategy: exponential (1s, 2s, 4s)
+- Retryable errors: auto retry
+- Non-retryable errors: log and skip
+
+#### Monitoring Metrics (integrated from docs/observability.md)
+
+**Key metrics**:
+| Metric | Threshold | Monitoring Frequency |
+|--------|-----------|---------------------|
+| Agent response time | < 60s | Real-time |
+| Batch execution time | < 1800s | Per batch |
+| Fix rounds | < 3 | Per task |
+| Error rate | < 10% | Per batch |
+| Timeout rate | < 5% | Per batch |
+
+**Alert rules**:
+| Alert | Condition | Level | Handling |
+|-------|-----------|-------|----------|
+| Agent timeout | Response > 300s | warning | Auto recovery |
+| Batch timeout | Execution > 1800s | critical | Skip batch |
+| High error rate | Error > 10% | critical | Pause check |
+| High fix rate | Fix > 3 rounds | warning | Log analysis
+
+#### Diagnostic Commands (integrated from docs/troubleshooting.md)
+
+**System status check**:
+```bash
+# Check latest log
+tail -20 {PROJECT_ROOT}/outputs/main-log.md
+
+# Check recent events
+tail -20 {PROJECT_ROOT}/outputs/events.jsonl
+
+# Check timeout records
+grep "timeout" {PROJECT_ROOT}/outputs/events.jsonl
+
+# Check error records
+grep "error" {PROJECT_ROOT}/outputs/events.jsonl
+
+# Check Agent status
+grep "agent_spawn\|agent_complete" {PROJECT_ROOT}/outputs/events.jsonl | tail -10
+```
+
+**Emergency recovery**:
+```bash
+# Restore from checkpoint
+opencode
+# Select main agent, system auto recovers
+
+# Skip stuck task
+vi {PROJECT_ROOT}/outputs/checkpoint.json
+# Modify currentBatch to increase by 1
+
+# Reset state
+rm {PROJECT_ROOT}/outputs/checkpoint.json
+rm -rf {PROJECT_ROOT}/outputs/agent-registry/
+```
+
+---
+
+#### 8.3 Session Keep-alive Strategy
 
 **Session lifecycle**:
 - Session validity: default 2 hours

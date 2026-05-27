@@ -303,18 +303,18 @@ Task(
 
 ---
 
-#### 自动超时检测与恢复（防卡死核心机制）
+#### 超时检测与恢复机制（整合自 docs/timeout-recovery.md）
 
-**超时检测规则**：
-| 检测项 | 超时阈值 | 检测频率 | 自动处理 |
-|-------|---------|---------|---------|
+**超时阈值配置**：
+| 检测项 | 阈值 | 检测频率 | 自动处理 |
+|-------|------|---------|---------|
 | 子Agent启动 | 60秒 | 每30秒 | 自动重启Agent |
 | 子Agent执行 | 300秒 | 每60秒 | 跳过该步骤，降级通过 |
 | 单Phase总时长 | 600秒 | 每120秒 | 跳过当前Phase |
 | 验证Agent | 300秒 | 每60秒 | 按FAIL处理，触发修正 |
+| 会话有效期 | 120分钟 | 每30分钟 | 自动刷新会话 |
 
 **自动恢复流程（无需人工干预）**：
-
 ```
 检测到超时
 ├── 子Agent超时（300秒无响应）
@@ -336,12 +336,90 @@ Task(
 4. Phase超时 → 跳过整个Phase，继续下一Phase
 5. **所有处理全自动，不询问用户，不阻塞流程**
 
-**日志记录**：
+#### 健康检查机制（整合自 docs/monitoring-alerting.md）
+
+**检查频率**：每30秒
+
+**检查项目**：
+| 检查项 | 方法 | 超时 | 处理 |
+|-------|------|------|------|
+| Agent响应 | ping | 10秒 | 超时则重启 |
+| 任务进度 | check_output | 30秒 | 无进度则告警 |
+| 资源状态 | check_resources | 5秒 | 不足则暂停 |
+| 网络状态 | ping_api | 10秒 | 断开则等待 |
+
+**健康状态**：
+- healthy：正常运行，继续执行
+- degraded：部分功能受影响，警告并继续
+- unhealthy：无法正常运行，暂停并恢复
+
+#### 错误分类与恢复（整合自 docs/error-recovery.md）
+
+**错误分类**：
+| 错误类型 | 特征 | 处理策略 |
+|---------|------|----------|
+| 可恢复 | 超时、网络问题、API限制 | 自动重试（指数退避） |
+| 不可恢复 | 逻辑错误、代码错误 | 记录并跳过 |
+| 平台错误 | 服务不可用、配额耗尽 | 等待或切换 |
+
+**重试策略**：
+- 最大重试次数：3次
+- 退避策略：指数退避（1s, 2s, 4s）
+- 可重试错误：自动重试
+- 不可重试错误：记录并跳过
+
+#### 监控指标（整合自 docs/observability.md）
+
+**关键指标**：
+| 指标 | 阈值 | 监控频率 |
+|------|------|---------|
+| Agent响应时间 | < 60秒 | 实时 |
+| Phase执行时间 | < 600秒 | 每Phase |
+| 修正轮次 | < 3轮 | 每任务 |
+| 错误率 | < 10% | 每Phase |
+| 超时率 | < 5% | 每Phase |
+
+**告警规则**：
+| 告警 | 条件 | 级别 | 处理 |
+|------|------|------|------|
+| Agent超时 | 响应 > 300秒 | warning | 自动恢复 |
+| Phase超时 | 执行 > 600秒 | critical | 跳过Phase |
+| 高错误率 | 错误 > 10% | critical | 暂停检查 |
+| 高修正率 | 修正 > 3轮 | warning | 记录分析
+
+#### 诊断命令（整合自 docs/troubleshooting.md）
+
+**系统状态检查**：
+```bash
+# 检查最新日志
+tail -20 {DEPLOY_ROOT}/outputs/main-log.md
+
+# 检查最近事件
+tail -20 {DEPLOY_ROOT}/outputs/events.jsonl
+
+# 检查超时记录
+grep "timeout" {DEPLOY_ROOT}/outputs/events.jsonl
+
+# 检查错误记录
+grep "error" {DEPLOY_ROOT}/outputs/events.jsonl
+
+# 检查Agent状态
+grep "agent_spawn\|agent_complete" {DEPLOY_ROOT}/outputs/events.jsonl | tail -10
 ```
-- {yymmdd hhmm} ⚠️ Agent超时：{agent_type}（{agent_id}），已等待{duration}秒
-- {yymmdd hhmm} 自动恢复：创建新会话，从检查点恢复
-- {yymmdd hhmm} 自动跳过：{步骤名}，标记为⚠️降级
-- {yymmdd hhmm} 继续执行：下一步骤/下一Phase
+
+**紧急恢复**：
+```bash
+# 从检查点恢复
+opencode
+# 选择主代理，系统自动恢复
+
+# 跳过卡住任务
+vi {DEPLOY_ROOT}/outputs/checkpoint.json
+# 修改 currentPhase 继续下一阶段
+
+# 重置状态
+rm {DEPLOY_ROOT}/outputs/checkpoint.json
+rm -rf {DEPLOY_ROOT}/outputs/agent-registry/
 ```
 
 ---
