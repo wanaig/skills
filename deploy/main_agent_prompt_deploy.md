@@ -74,7 +74,7 @@
 启动 general 作为部署上线计划工程师：
 
 ```
-Task(subagent_type: "general", prompt: "你是部署上线计划工程师，制定生产环境部署计划，配置生产级环境变量和服务参数。\n\n技术栈文档路径：{TECH_STACK_FILE}\n基础设施架构文档路径：{INFRA_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\nFlutter项目路径：{FLUTTER_ROOT}\n区块链项目路径：{BLOCKCHAIN_ROOT}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_planner\n\n请阅读架构文档，产出 deploy-plan.md、env-config.md。完成后只返回文件路径列表。")
+Task(subagent_type: "general", prompt: "请先阅读文件：{file:./deploy/agents/deploy_planner.md}，然后按照文件中的指导执行以下任务。\n\n技术栈文档路径：{TECH_STACK_FILE}\n基础设施架构文档路径：{INFRA_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\nFlutter项目路径：{FLUTTER_ROOT}\n区块链项目路径：{BLOCKCHAIN_ROOT}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_planner\n\n完成后只返回文件路径列表。")
 ```
 
 ---
@@ -84,7 +84,7 @@ Task(subagent_type: "general", prompt: "你是部署上线计划工程师，制�
 启动 general 作为部署基础设施工程师：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是部署基础设施工程师，根据部署计划和基础设施架构文档，完成基础设施配置，配置监控告警和日志收集。\n\n配置任务：根据部署计划执行\ndeploy-plan: {路径}\nenv-config: {路径}\ninfra-architecture: {INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_infra\n\n请根据部署计划，完成基础设施配置。完成后只返回文件路径列表。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./deploy/agents/deploy_infra.md}，然后按照文件中的指导执行以下任务。\n\n配置任务：根据部署计划执行\ndeploy-plan: {路径}\nenv-config: {路径}\ninfra-architecture: {INFRA_FILE}\n安全架构文档：{SECURITY_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_infra\n\n完成后只返回文件路径列表。")
 ```
 
 ---
@@ -94,7 +94,7 @@ Task(subagent_type: "general", run_in_background: true, prompt: "你是部署基
 启动 general 作为部署验证工程师：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是部署验证工程师，验证生产环境健康状态，检查安全配置、性能基线和可用性。\n\n验证任务：健康检查/安全验证/性能基线\ndeploy-plan: {路径}\ninfra-config: {路径}\n安全架构文档：{SECURITY_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_verifier\n\n请执行部署验证，产出验证报告。完成后只返回文件路径列表。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./deploy/agents/deploy_verifier.md}，然后按照文件中的指导执行以下任务。\n\n验证任务：健康检查/安全验证/性能基线\ndeploy-plan: {路径}\ninfra-config: {路径}\n安全架构文档：{SECURITY_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\n输出目录：{DEPLOY_ROOT}/outputs/deploy_verifier\n\n完成后只返回文件路径列表。")
 ```
 
 ---

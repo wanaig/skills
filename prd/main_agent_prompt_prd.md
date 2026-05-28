@@ -75,13 +75,13 @@
 启动 4 个 general 作为需求分析师：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是业务分析师，分析产品的商业价值、市场定位、竞争环境和商业模式。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 business-analysis.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./prd/agents/prd_business.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 business-analysis.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是用户研究员，研究目标用户、分析用户需求、设计用户旅程和用户故事。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 user-research.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./prd/agents/prd_user.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 user-research.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是功能设计师，设计产品功能模块、业务流程、数据字典和接口需求。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 functional-design.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./prd/agents/prd_functional.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 functional-design.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是技术评估师，评估产品技术可行性、推荐技术选型、分析技术风险和估算开发资源。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 technical-assessment.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./prd/agents/prd_technical.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n用户输入：{用户输入}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 technical-assessment.md 初稿。完成后只返回文件路径。")
 ```
 
 ---

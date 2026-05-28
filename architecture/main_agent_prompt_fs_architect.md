@@ -84,18 +84,20 @@ Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QP
 
 ### 同时启动 6 个 general 作为架构师
 
+请先阅读对应角色的详细指导文件，然后执行任务：
+
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是技术栈评估分析师，阅读需求文档和项目约束，分析推荐前后端技术栈、通信协议、共享类型策略。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{约束信息}\n{PRD风险项}\n\n产出 tech-stack.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./architecture/agents/fa_techstack.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{约束信息}\n{PRD风险项}\n\n产出 tech-stack.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是数据架构设计师，设计数据模型、数据库选型、索引策略、缓存架构、实体关系图。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 data-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./architecture/agents/fa_data.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 data-architecture.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是基础设施架构师，设计部署拓扑、CI/CD流水线、环境规划、监控和日志方案。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 infra-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./architecture/agents/fa_infra.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 infra-architecture.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是安全架构师，进行威胁建模，设计认证授权方案、数据安全策略和安全审计体系。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 security-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./architecture/agents/fa_security.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 security-architecture.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是API契约设计师，设计RESTful API端点、请求响应结构、错误码规范和OpenAPI规格。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 api-contract.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./architecture/agents/fa_api_design.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 api-contract.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是UI/UX架构设计师，设计完整页面路由树、组件架构、设计Token体系、交互流程和API-页面映射关系。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 ui-ux-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./architecture/agents/fa_uiux.md}，然后按照文件中的指导执行以下任务。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 ui-ux-architecture.md 初稿。完成后只返回文件路径。")
 ```
 
 **超时策略**：300秒超时，额外等待120秒，仍无响应则标记为"超时"并降级通过。

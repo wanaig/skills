@@ -75,7 +75,7 @@
 启动 general 作为前后端联调集成规划工程师：
 
 ```
-Task(subagent_type: "general", prompt: "你是前后端联调集成规划工程师，制定集成对接计划，建立前端API层和共享类型文件。\n\nUI/UX 架构文档路径：{UI_UX_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\n基础设施架构文档路径：{INFRA_FILE}\n安全架构文档路径：{SECURITY_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\nFlutter项目路径：{FLUTTER_ROOT}\n区块链项目路径：{BLOCKCHAIN_ROOT}\n输出目录：{PROJECT_ROOT}/outputs/fs_planner\n\n请阅读架构文档，产出 integration-plan.md、api-mapping.md。完成后只返回文件路径列表。")
+Task(subagent_type: "general", prompt: "请先阅读文件：{file:./fullstack/agents/fs_planner.md}，然后按照文件中的指导执行以下任务。\n\nUI/UX 架构文档路径：{UI_UX_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\n基础设施架构文档路径：{INFRA_FILE}\n安全架构文档路径：{SECURITY_FILE}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\nFlutter项目路径：{FLUTTER_ROOT}\n区块链项目路径：{BLOCKCHAIN_ROOT}\n输出目录：{PROJECT_ROOT}/outputs/fs_planner\n\n完成后只返回文件路径列表。")
 ```
 
 ---
@@ -87,7 +87,7 @@ Task(subagent_type: "general", prompt: "你是前后端联调集成规划工程�
 启动 general 作为前后端接口对接开发工程师：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是前后端接口对接开发工程师，实现前端API调用层和类型定义，对接后端接口。\n\n对接任务：{接口列表}\nintegration-plan: {路径}\napi-mapping: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\nFlutter项目路径：{FLUTTER_ROOT}\n区块链项目路径：{BLOCKCHAIN_ROOT}\n\n请按顺序逐个接口对接。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./fullstack/agents/fs_api_dev.md}，然后按照文件中的指导执行以下任务。\n\n对接任务：{接口列表}\nintegration-plan: {路径}\napi-mapping: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\nFlutter项目路径：{FLUTTER_ROOT}\n区块链项目路径：{BLOCKCHAIN_ROOT}\n\n请按顺序逐个接口对接。")
 ```
 
 ### Step 2：批量三维测试
@@ -95,11 +95,11 @@ Task(subagent_type: "general", run_in_background: true, prompt: "你是前后端
 启动 3 个 general 作为测试工程师并行：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是前后端契约测试工程师，验证类型定义/字段名/请求响应结构一致性。\n\n契约测试：{接口列表}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\napi-mapping: {路径}\n输出目录: {PROJECT_ROOT}/outputs/fs_tester_contract/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./fullstack/agents/fs_tester_contract.md}，然后按照文件中的指导执行以下任务。\n\n契约测试：{接口列表}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\napi-mapping: {路径}\n输出目录: {PROJECT_ROOT}/outputs/fs_tester_contract/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是前后端数据流测试工程师，验证 loading/error/data 三态和状态链路。\n\n数据流测试：{接口列表}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\napi-mapping: {路径}\n输出目录: {PROJECT_ROOT}/outputs/fs_tester_dataflow/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./fullstack/agents/fs_tester_dataflow.md}，然后按照文件中的指导执行以下任务。\n\n数据流测试：{接口列表}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\napi-mapping: {路径}\n输出目录: {PROJECT_ROOT}/outputs/fs_tester_dataflow/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是前后端集成测试工程师，验证 CORS/鉴权流通/路由挂载/错误穿透。\n\n集成测试：{接口列表}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\napi-mapping: {路径}\n输出目录: {PROJECT_ROOT}/outputs/fs_tester_integration/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./fullstack/agents/fs_tester_integration.md}，然后按照文件中的指导执行以下任务。\n\n集成测试：{接口列表}\n前端项目路径：{FRONTEND_ROOT}\n后端项目路径：{BACKEND_ROOT}\napi-mapping: {路径}\n输出目录: {PROJECT_ROOT}/outputs/fs_tester_integration/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 ```
 
 ### Step 3：修正循环

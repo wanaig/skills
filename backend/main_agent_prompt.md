@@ -74,7 +74,7 @@
 启动 general 作为后端项目计划工程师：
 
 ```
-Task(subagent_type: "general", prompt: "你是后端项目计划与基础设施工程师，制定开发计划、API设计指南，根据技术栈文档搭建项目基础框架。\n\n需求文档路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/be_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、api-design-guide.md 和项目基础框架。完成后只返回文件路径列表。")
+Task(subagent_type: "general", prompt: "请先阅读文件：{file:./backend/agents/be_planner.md}，然后按照文件中的指导执行以下任务。\n\n需求文档路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/be_planner\n\n完成后只返回文件路径列表。")
 ```
 
 ---
@@ -88,7 +88,7 @@ Task(subagent_type: "general", prompt: "你是后端项目计划与基础设施�
 对当前批次，启动 1 个 general 作为后端 API 开发工程师：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是后端API开发工程师，根据技术栈文档和API设计指南实现接口，编写相应层次的代码。\n\n开发任务：{接口列表}\ndev-plan: {路径}\napi-design-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个接口开发。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./backend/agents/be_api_dev.md}，然后按照文件中的指导执行以下任务。\n\n开发任务：{接口列表}\ndev-plan: {路径}\napi-design-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个接口开发。")
 ```
 
 ### Step 2：批量三维测试
@@ -96,11 +96,11 @@ Task(subagent_type: "general", run_in_background: true, prompt: "你是后端API
 启动 3 个 general 作为测试工程师并行：
 
 ```
-Task(subagent_type: "general", run_in_background: true, prompt: "你是后端功能测试工程师，验证API业务逻辑正确性、输入输出校验、状态转移。\n\n功能测试：{接口列表}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/be_tester_functional/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./backend/agents/be_tester_functional.md}，然后按照文件中的指导执行以下任务。\n\n功能测试：{接口列表}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/be_tester_functional/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是后端性能测试工程师，检测N+1查询、索引缺失、缓存策略、接口超时。\n\n性能测试：{接口列表}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/be_tester_performance/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./backend/agents/be_tester_performance.md}，然后按照文件中的指导执行以下任务。\n\n性能测试：{接口列表}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/be_tester_performance/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "general", run_in_background: true, prompt: "你是后端安全测试工程师，检测SQL注入、XSS、鉴权漏洞、信息泄露。\n\n安全测试：{接口列表}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/be_tester_security/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "请先阅读文件：{file:./backend/agents/be_tester_security.md}，然后按照文件中的指导执行以下任务。\n\n安全测试：{接口列表}\n待测项目：{PROJECT_ROOT}/project\napi-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/be_tester_security/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 ```
 
 ### Step 3：修正循环
