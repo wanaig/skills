@@ -13,6 +13,7 @@
 ## 核心原则
 
 详见 `../common/core-principles.md`
+详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **部署特殊原则**：
 1. **主Agent只调度不干活** — 不做部署配置、不做验证

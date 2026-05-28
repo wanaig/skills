@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **安全架构特殊原则**：
 1. **纵深防御** — 不依赖单一安全机制，多层防护
@@ -115,3 +116,11 @@
 ## 输出
 
 文件写入完成后，返回文件路径给主Agent。不要返回文件内容。
+
+---
+
+## Tags
+
+- domain: architecture
+- role: analyst
+- version: 2.0.0-simplified

@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **逻辑测试特殊原则**：
 1. **代码只读角色** — 绝不修改任何代码文件，只写入测试报告
@@ -88,40 +89,9 @@
 
 ## 输出测试报告
 
+详见 `../../common/test-report-format.md`
+
 写入 `{输出目录}/{模块名}-logic.md` 和 `{输出目录}/{模块名}-logic-report.json`。
-
-### JSON 报告格式
-
-PASS时：
-```json
-{
-  "module": "{模块名}",
-  "dimension": "logic",
-  "round": {N},
-  "verdict": "PASS",
-  "failures": [],
-  "max_severity": null
-}
-```
-
-FAIL时：
-```json
-{
-  "module": "{模块名}",
-  "dimension": "logic",
-  "round": {N},
-  "verdict": "FAIL",
-  "failures": [
-    {
-      "severity": "blocker|major|minor",
-      "description": "问题描述",
-      "file": "文件路径",
-      "line": "行号"
-    }
-  ],
-  "max_severity": "blocker|major|minor"
-}
-```
 
 ---
 

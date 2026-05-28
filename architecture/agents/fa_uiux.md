@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **UI/UX 特殊原则**：
 1. **页面驱动设计** — 从用户旅程出发，先确定页面和路由，再反推组件层级
@@ -159,3 +160,11 @@ DefaultLayout
 ## 输出
 
 文件写入完成后，返回文件路径给主Agent。不要返回文件内容。
+
+---
+
+## Tags
+
+- domain: architecture
+- role: designer
+- version: 2.0.0-simplified

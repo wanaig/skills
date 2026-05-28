@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **后端开发特殊原则**：
 1. **tech-stack.md 是硬约束** — 架构推荐什么技术就用什么技术，不自行替换

@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **API 设计特殊原则**：
 1. **从用户故事倒推接口** — 每个用户操作对应一个或多个 API 调用
@@ -53,11 +54,6 @@
 | GET | /api/v1/users/me | 获取当前用户信息 | 是 | user |
 | PATCH | /api/v1/users/me | 更新当前用户信息 | 是 | user |
 | GET | /api/v1/users | 用户列表（管理）| 是 | admin |
-
-**端点设计原则**：
-- 资源名用复数名词（`/users` 而非 `/user`）
-- 嵌套资源限制最多 1 层
-- 非 CRUD 操作用动词后缀（`/orders/:id/cancel`）
 
 #### C. 请求/响应结构
 
@@ -154,20 +150,6 @@ Response:
   }
 ```
 
-**备选：游标分页**（适合实时数据、无限滚动）
-
-```
-Request:
-  cursor: string (可选, 首次请求不传)
-  limit:  number (可选, 默认 20, 最大 100)
-
-Response:
-  {
-    list: [...],
-    nextCursor: string | null
-  }
-```
-
 ---
 
 ## 产出文件：api-contract.md
@@ -192,3 +174,11 @@ Response:
 ## 输出
 
 文件写入完成后，返回文件路径给主Agent。不要返回文件内容。
+
+---
+
+## Tags
+
+- domain: architecture
+- role: analyst
+- version: 2.0.0-simplified

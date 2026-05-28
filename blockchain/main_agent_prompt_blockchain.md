@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../common/core-principles.md`
+详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **区块链特殊原则**：
 1. **主Agent只调度不干活** — 不做合约开发、不做测试、不做安全审查

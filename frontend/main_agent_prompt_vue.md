@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../common/core-principles.md`
+详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **前端特殊原则**：
 1. **主Agent只调度不干活** — 不做开发、不做测试、不做视觉验证、**不直接编辑任何源代码文件**
@@ -101,8 +102,6 @@ Task(subagent_type: "dg-vue-tester-logic", run_in_background: true, prompt: "逻
 
 Task(subagent_type: "dg-vue-tester-style", run_in_background: true, prompt: "样式测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_style/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 ```
-
-**超时应对**：如果 TaskOutput 超时（300s），使用 Read 或 Grep 工具读取 JSON 报告文件获取 verdict。
 
 ### Step 3：修正循环
 

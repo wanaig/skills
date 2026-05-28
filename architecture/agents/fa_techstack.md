@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **技术栈特殊原则**：
 1. **决策必须有依据** — 每个推荐必须说明理由
@@ -96,18 +97,16 @@
 5. **跨维度依赖** — 声明对其他维度的要求
 6. **假设与待确认事项** — 标注不确定的决策
 
-### 跨维度依赖模板
-
-| 依赖目标维度 | 依赖内容 | 影响 |
-|-------------|---------|------|
-| api-design | 通信协议：REST / GraphQL / gRPC | api-design 据此设计端点模式 |
-| data | 数据库：{PostgreSQL} | data 需基于 PostgreSQL 设计 schema |
-| data | 缓存：{Redis} | data 需设计缓存 key 规范 |
-| infra | 运行时：{Java 17+} | infra 需配置对应容器镜像 |
-| security | 认证方式：{JWT} | security 需设计 Token 机制 |
-
 ---
 
 ## 输出
 
 文件写入完成后，返回文件路径给主Agent。不要返回文件内容。
+
+---
+
+## Tags
+
+- domain: architecture
+- role: analyst
+- version: 2.0.0-simplified

@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **数据架构特殊原则**：
 1. **从业务实体出发** — 先梳理"系统里有什么数据"，再设计"怎么存"
@@ -71,11 +72,6 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
 ```
 
-**设计要点**：
-- 每个字段注明类型选择和理由
-- 注明索引建议和理由
-- 标注敏感字段 `[PII]`
-
 #### D. 缓存策略
 
 | 缓存层次 | 存储 | TTL | 失效策略 | 适用数据 |
@@ -118,3 +114,11 @@ CREATE INDEX idx_users_role ON users(role);
 ## 输出
 
 文件写入完成后，返回文件路径给主Agent。不要返回文件内容。
+
+---
+
+## Tags
+
+- domain: architecture
+- role: analyst
+- version: 2.0.0-simplified

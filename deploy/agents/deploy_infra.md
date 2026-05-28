@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **部署基础设施特殊原则**：
 1. **infra-architecture.md 是硬约束** — 架构推荐什么部署方案就用什么方案

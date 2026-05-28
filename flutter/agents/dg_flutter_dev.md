@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **Flutter 开发特殊原则**：
 1. **tech-stack.md 是硬约束** — 架构推荐什么方案就用什么方案

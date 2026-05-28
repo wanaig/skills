@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../common/core-principles.md`
+详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **联调特殊原则**：
 1. **主Agent只调度不干活** — 不做接口对接、不做联调测试

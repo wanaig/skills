@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../common/core-principles.md`
+详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **架构特殊原则**：
 1. **主Agent只编排和整合，不做技术分析** — 技术决策由子Agent做出
@@ -57,8 +58,6 @@ Grep(pattern="实体|数据|字段|表|存储|上传|entity|schema|table|storage
 Grep(pattern="流程|操作|步骤|状态|工作流|workflow|state|process|flow", path="{REQUIREMENT_FILE}")
 Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QPS", path="{REQUIREMENT_FILE}")
 ```
-
-**处理**：某维度无匹配 → 日志标注风险，子Agent prompt 附加风险提示
 
 ---
 
@@ -130,16 +129,6 @@ Task(subagent_type: "fa-uiux", run_in_background: true, prompt: "阶段：初稿
 ### 读取策略
 
 只读每个文件中的"跨维度依赖"章节，用 Grep 提取。
-
-### 检查清单（40 项）
-
-详见原始文档，包含：
-- 数据库选型一致
-- 缓存选型一致
-- 通信协议一致
-- 认证方案一致
-- API 资源与数据实体一致
-- 等等...
 
 ### 修正循环（最多 3 轮）
 

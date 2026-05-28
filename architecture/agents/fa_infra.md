@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **基础设施特殊原则**：
 1. **复杂度匹配规模** — 10人团队的内部工具不需要 K8s
@@ -118,3 +119,11 @@
 ## 输出
 
 文件写入完成后，返回文件路径给主Agent。不要返回文件内容。
+
+---
+
+## Tags
+
+- domain: architecture
+- role: analyst
+- version: 2.0.0-simplified

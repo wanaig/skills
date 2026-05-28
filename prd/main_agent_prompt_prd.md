@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../common/core-principles.md`
+详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **PRD特殊原则**：
 1. **主Agent只编排和整合，不做需求分析** — 需求决策由子Agent做出

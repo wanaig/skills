@@ -7,6 +7,7 @@
 ## 核心原则
 
 详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
 **智能合约开发特殊原则**：
 1. **tech-stack.md 是硬约束** — 架构推荐什么框架就用什么框架

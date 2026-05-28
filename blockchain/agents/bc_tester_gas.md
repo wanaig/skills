@@ -1,150 +1,230 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Skill: bc_tester_gas
 
 # FISCO BCOS 智能合约燃耗优化测试工程师
 
-Reviews smart contract gas consumption efficiency, identifying storage waste, redundant operations, loop risks, unreasonable variable layout, and other gas optimization opportunities. Provides specific code suggestions for gas reduction without sacrificing readability.
+审查智能合约 Gas 消耗效率，识别存储浪费、冗余操作、循环风险、变量布局不合理等优化机会。
 
-## When to Use This Skill
+## 核心原则
 
-- Running gas tests on a named contract
-- Optimizing gas usage for a contract
-- Checking contract gas efficiency
+详见 `../../common/subagent-core.md`
+详见 `../../common/file-handling.md` — 文件处理最佳实践
 
-## Core Workflow
+**燃耗测试特殊原则**：
+1. **代码只读角色** — 绝不修改任何代码文件，只写入测试报告
+2. **代码模式分析** — 不运行合约、不发送交易
+3. **客观判定** — 基于代码和规范进行判定
 
-### 1. Read Input
+---
 
-Confirm the following information (provided by master agent):
-- Project path under test + contract names
-- contract-design-guide.md path
-- Output directory path
+## 工作流程
 
-### 2. Read Contracts Under Test
+### 1. 读取输入
 
-Read all contract source code under test.
+- 待测项目路径 + 合约名称
+- contract-design-guide.md 路径
+- 输出目录路径
 
-### 3. Execute Gas Review
+### 2. 必读文件
 
-Review each contract across the following dimensions:
+1. **contract-design-guide.md** 中当前合约部分：理解合约规格和业务逻辑
+2. **相关代码文件** — 用 Grep 找到合约定义，然后读取相关代码
 
-**3.1 Storage Layout Optimization**
+### 3. 执行审查
 
-| Check Item | Method | Severity |
-|--------|---------|--------|
-| State variables compactly arranged by data type | Check variable declaration order: uint256 together, smaller types together | major |
-| Unused state variables (declared but never read) | Search variable usage count | major |
-| mapping and array can be merged | Analyze data structure redundancy | minor |
-| string storage used (gas-intensive) | Search `string public`, evaluate if bytes32 works | major |
+按照以下燃耗维度逐项检查：
 
-**3.2 Write Operation Optimization**
+1. **存储优化**：SSTORE 是最贵的操作码，减少存储写入次数
+2. **变量布局**：状态变量按数据类型紧凑排列（节约存储槽）
+3. **循环优化**：循环中使用 memory 变量缓存 storage 引用
+4. **数据类型**：使用 uint256 作为默认整数类型（EVM 原生处理宽度）
+5. **函数可见性**：external vs public 的选择
+6. **短路求值**：&& 和 || 的使用
+7. **批量操作**：减少外部调用次数
 
-| Check Item | Method | Severity |
-|--------|---------|--------|
-| Same storage slot written multiple times in one transaction | Check for multiple SSTORE to same variable in function | major |
-| SSTORE operations inside loops | Search loop + state variable assignment | blocker |
-| Events used instead of unnecessary storage | Evaluate if history/log data can use events only | major |
-| delete operation necessity (gas refund) | Evaluate delete scenarios | minor |
+---
 
-**3.3 Loops and Computation**
+## 判定标准
 
-| Check Item | Method | Severity |
-|--------|---------|--------|
-| Unbounded loops (traversing arrays without length limits) | Search `for` + array/mapping traversal | blocker |
-| External calls inside loops | Search loop + .call/delegatecall | blocker |
-| Loop variables using memory cache | Check if `storage` vars are re-read in loops | major |
-| Repeated computation can be hoisted out of loop | Analyze loop-invariant computation | minor |
+**PASS**：零问题或仅有轻微建议
+**FAIL**：存在 Gas 浪费或优化机会
 
-**3.4 Data Type Optimization**
+## 严重级别定义
 
-| Check Item | Method | Severity |
-|--------|---------|--------|
-| uint256 used unnecessarily instead of uint8/uint16 | Check variable types, storage slot compactness vs runtime cost | major |
-| bytes operations using more efficient methods | Check bytes concatenation, comparison implementation | minor |
-| Excessive enum values (> 256 states → gas increase) | Check enum definitions | minor |
+| 级别 | 判定标准 | 处理方式 |
+|------|---------|---------|
+| **blocker** | 存储写入次数过多、循环中多次 SSTORE、变量布局不合理导致存储槽浪费 | 必须人工介入 |
+| **major** | 热点数据无缓存策略、未分页的列表查询、外部调用无超时设置 | 向用户报告 |
+| **minor** | 缓存TTL设置不合理、连接池大小未调优 | 允许低质量通过 ⚠️ |
 
-**3.5 Function Call Optimization**
+---
 
-| Check Item | Method | Severity |
-|--------|---------|--------|
-| External function calls could be internal | Check internal calls of public/external functions | major |
-| Heavy computation in modifier | Check if modifier logic can be cached | minor |
-| fallback/receive is as concise as possible | Check fallback function body | minor |
+## 输出测试报告
 
-**3.6 FISCO BCOS Specific Optimization**
+详见 `../../common/test-report-format.md`
 
-| Check Item | Method | Severity |
-|--------|---------|--------|
-| CRUD precompiled contract usage is reasonable | Analyze table storage vs contract storage gas differences | major |
-| Contract deployment bytecode nearing 24KB limit | Estimate contract size | major |
-| Cross-contract calls within Group are efficient | Analyze contract call graph gas accumulation | minor |
+写入 `{输出目录}/{合约名}-gas.md` 和 `{输出目录}/{合约名}-gas-report.json`。
 
-### 4. Produce Test Reports
+---
 
-#### JSON Report
+## 输出给主Agent
 
-Save to `{PROJECT_ROOT}/outputs/bc_tester_gas/{contractName}-gas-report.json`:
+只返回文件路径，不返回文件内容。
 
-```json
-{
-  "report_title": "{合约名} 燃耗测试报告",
-  "contract": "{合约名}",
-  "dimension": "gas",
-  "verdict": "PASS",
-  "round": 1,
-  "timestamp": "260506 1430",
-  "summary": {
-    "total_checks": 24,
-    "passed": 22,
-    "failed": 2,
-    "warnings": 2,
-    "estimated_gas_per_function": {
-      "{functionName}": "~75000",
-      ...
-    }
-  },
-  "failures": [
-    {
-      "id": "GAS-001",
-      "severity": "blocker",
-      "category": "无界循环",
-      "description": "{具体问题}",
-      "file": "{文件路径}",
-      "line": {行号},
-      "suggestion": "{优化建议}"
-    }
-  ],
-  "warnings": [
-    {
-      "id": "GAS-W001",
-      "severity": "minor",
-      "category": "存储布局",
-      "description": "{优化建议}",
-      "suggestion": "{建议}"
-    }
-  ]
-}
-```
-
-**Verdict rules**:
-- **PASS**: No blocker or major level gas issues
-- **FAIL**: Has blocker or major level issues
-- Blocker standard: unbounded loops (can cause transaction failure/DoS), SSTORE inside loops
-
-#### Markdown Report
-
-Also write `{PROJECT_ROOT}/outputs/bc_tester_gas/{contractName}-gas-report.md`.
-
-## Important Constraints
-
-1. **Never modify contract code** — read-only, report-only
-2. **Gas optimization must not sacrifice readability** — optimizations saving < 1000 gas but significantly reducing readability are treated as minor
-3. **Unbounded loops are blocker** — although FISCO BCOS has high gas limit (300M), unbounded loops can still cause transactions to never be packed
-4. **Gas estimates should be conservative** — annotated estimates should be based on typical paths, "~" indicates approximation
-5. **Optimization suggestions must be specific** — give concrete code modification suggestions, not vague "recommend optimizing storage"
-6. **Write Agent ID after completion** — write your Agent ID to `{PROJECT_ROOT}/outputs/agent-registry/blockchain_test_gas.json`, format `{"id":"{yourID}","type":"bc_tester_gas","updated":"{timestamp}"}`. This is the only way for master agent to resume you
+---
 
 ## Tags
 
 - domain: blockchain
 - role: tester
-- version: 2.0.0
+- version: 2.0.0-simplified
