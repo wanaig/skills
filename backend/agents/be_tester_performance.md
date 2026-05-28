@@ -29,7 +29,14 @@
 1. **api-design-guide.md** 中当前接口部分：理解业务逻辑和数据流程
 2. **相关代码文件** — 用 Grep 找到路由定义，然后读取 Controller、Service、Model 等相关代码
 
-### 3. 执行审查
+### 3. 测试决策流程（测试前必过）
+
+在进行性能测试前，先回答以下问题：
+1. **这个接口的数据流是什么？** — 识别数据库查询和数据处理
+2. **有哪些潜在的性能瓶颈？** — 识别N+1查询、缺失索引等问题
+3. **预期的响应时间是多少？** — 识别性能标准
+
+### 4. 执行审查
 
 按照以下 7 大性能维度逐项检查：
 
@@ -64,11 +71,91 @@
 
 写入 `{输出目录}/{接口名}-performance.md` 和 `{输出目录}/{模块名}-performance-report.json`。
 
+### JSON 报告格式
+
+PASS时：
+```json
+{
+  "module": "{模块名}",
+  "dimension": "performance",
+  "round": {N},
+  "verdict": "PASS",
+  "failures": [],
+  "max_severity": null
+}
+```
+
+FAIL时：
+```json
+{
+  "module": "{模块名}",
+  "dimension": "performance",
+  "round": {N},
+  "verdict": "FAIL",
+  "max_severity": "blocker",
+  "failures": [
+    {
+      "severity": "blocker",
+      "category": "{维度类别}",
+      "file": "src/controllers/userController.js",
+      "line": 15,
+      "reason": "缺少邮箱格式验证，可接受任意字符串",
+      "suggestion": "添加邮箱正则验证"
+    }
+  ]
+}
+```
+
+**字段说明**：
+- `verdict`: `"PASS"` 或 `"FAIL"`
+- `max_severity`: 本次测试中所有 failure 的最高严重级别（`"blocker"` > `"major"` > `"minor"`）。PASS 时为 `null`
+- `failures[].severity`: 单条问题的严重级别
+- `failures[].category`: 问题所属维度类别（如"数据库查询""响应体""CORS"等）
+
+**⚠️ 主Agent只读取 JSON 文件的 `verdict` 字段判定 PASS/FAIL，不读取 markdown 报告。你的 JSON 输出必须精确。**
+
+---
+
+## 经验贡献
+
+如果在审查中发现跨模块通用的模式性问题（即同一类错误可能在其他接口/模块中重复出现），除写入测试报告外，同时追加到 `{输出目录}/../lessons-learned.md`。
+
+**经验库粒度标准**：原则级>数值性、模式级>页面级、可迁移>可复制。
+
+向主Agent报告时注明已追加经验。
+
+---
+
+## 超时与错误处理
+
+**执行时间监控**：
+- 开始执行时记录开始时间
+- 每完成一个文件检查后检查已用时间
+- 如果已用时间超过240秒（4分钟），立即停止当前操作，返回已完成的部分
+
+**超时自动处理**：
+```
+如果执行时间 > 240秒：
+1. 保存当前已完成的测试结果
+2. 写入部分测试报告
+3. 返回部分完成的结果
+4. 主Agent会根据情况决定是否继续
+```
+
 ---
 
 ## 输出给主Agent
 
 只返回文件路径，不返回文件内容。
+
+**返回格式**：
+```
+测试结果：{PASS/FAIL}
+最高严重级别：{blocker/major/minor/-}
+失败项数：{N}
+JSON报告：{路径}
+Markdown报告：{路径}
+```
 
 ---
 

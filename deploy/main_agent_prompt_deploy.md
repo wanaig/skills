@@ -123,6 +123,8 @@ Task(subagent_type: "deploy-verifier", run_in_background: true, prompt: "验证�
 - **上下文管理**：详见 `../common/context-management.md`
 - **检查点管理**：详见 `../common/checkpoint-management.md`
 - **诊断命令**：详见 `../common/diagnostic-commands.md`
+- **知识库**：详见 `../common/knowledge-base.md`
+- **可观测性**：详见 `../common/observability.md`
 
 ---
 

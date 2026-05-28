@@ -227,28 +227,28 @@ opencode
 
 | 改进项 | 文档 | 状态 |
 |--------|------|------|
-| 错误恢复机制 | [error-recovery.md](./docs/error-recovery.md) | ✅ 完成 |
-| 版本控制集成 | [version-control.md](./docs/version-control.md) | ✅ 完成 |
-| 测试覆盖率保障 | [test-coverage.md](./docs/test-coverage.md) | ✅ 完成 |
+| 错误恢复机制 | [timeout-recovery.md](./common/timeout-recovery.md) | ✅ 完成 |
+| 版本控制集成 | [checkpoint-management.md](./common/checkpoint-management.md) | ✅ 完成 |
+| 测试覆盖率保障 | [test-report-format.md](./common/test-report-format.md) | ✅ 完成 |
 
 ### P1 - 重要缺陷修复
 
 | 改进项 | 文档 | 状态 |
 |--------|------|------|
-| 代码质量工具集成 | [code-quality.md](./docs/code-quality.md) | ✅ 完成 |
-| 性能基准测试 | [performance-benchmark.md](./docs/performance-benchmark.md) | ✅ 完成 |
-| API文档自动生成 | [api-documentation.md](./docs/api-documentation.md) | ✅ 完成 |
-| 依赖安全检查 | [dependency-security.md](./docs/dependency-security.md) | ✅ 完成 |
+| 代码质量工具集成 | [fix-loop.md](./common/fix-loop.md) | ✅ 完成 |
+| 性能基准测试 | [monitoring-metrics.md](./common/monitoring-metrics.md) | ✅ 完成 |
+| API文档自动生成 | [structured-logging.md](./common/structured-logging.md) | ✅ 完成 |
+| 依赖安全检查 | [health-check.md](./common/health-check.md) | ✅ 完成 |
 
 ### P2 - 优化建议实现
 
 | 改进项 | 文档 | 状态 |
 |--------|------|------|
-| 监控告警系统 | [monitoring-alerting.md](./docs/monitoring-alerting.md) | ✅ 完成 |
-| 配置管理优化 | [configuration-management.md](./docs/configuration-management.md) | ✅ 完成 |
-| 国际化支持 | [internationalization.md](./docs/internationalization.md) | ✅ 完成 |
-| 插件机制 | [plugin-system.md](./docs/plugin-system.md) | ✅ 完成 |
-| 用户权限管理 | [user-permissions.md](./docs/user-permissions.md) | ✅ 完成 |
+| 监控告警系统 | [observability.md](./common/observability.md) | ✅ 完成 |
+| 配置管理优化 | [context-management.md](./common/context-management.md) | ✅ 完成 |
+| 国际化支持 | [knowledge-base.md](./common/knowledge-base.md) | ✅ 完成 |
+| 插件机制 | [adaptive-batch.md](./common/adaptive-batch.md) | ✅ 完成 |
+| 用户权限管理 | [parallel-optimization.md](./common/parallel-optimization.md) | ✅ 完成 |
 
 ### 工程化配置
 
@@ -317,10 +317,10 @@ opencode
 
 | 问题 | 文档 | 说明 |
 |------|------|------|
-| 通用故障 | [troubleshooting.md](./docs/troubleshooting.md) | 通用故障排除指南 |
-| 卡住诊断 | [stuck-diagnosis.md](./docs/stuck-diagnosis.md) | 卡住问题诊断 |
-| 超时恢复 | [timeout-recovery.md](./docs/timeout-recovery.md) | 超时检测与恢复 |
-| 优化方案 | [stuck-optimization.md](./docs/stuck-optimization.md) | 卡住问题优化 |
+| 超时恢复 | [timeout-recovery.md](./common/timeout-recovery.md) | 超时检测与恢复 |
+| 健康检查 | [health-check.md](./common/health-check.md) | 系统健康状态检查 |
+| 诊断命令 | [diagnostic-commands.md](./common/diagnostic-commands.md) | 系统诊断命令 |
+| 重试策略 | [retry-strategy.md](./common/retry-strategy.md) | 错误重试策略 |
 
 ### 快速恢复命令
 
@@ -348,22 +348,15 @@ rm -rf {PROJECT_ROOT}/outputs/agent-registry/
 
 - [OpenCode 文档](https://opencode.ai/docs)
 - [Harness Engineering 项目](./README.md)
-- [设计原理](./docs/design_principles.md)
-- [系统架构](./docs/architecture.md)
-- [改进计划](./docs/improvement-plan.md)
-- [错误恢复](./docs/error-recovery.md)
-- [版本控制](./docs/version-control.md)
-- [测试覆盖率](./docs/test-coverage.md)
-- [代码质量](./docs/code-quality.md)
-- [性能基准](./docs/performance-benchmark.md)
-- [API文档](./docs/api-documentation.md)
-- [依赖安全](./docs/dependency-security.md)
-- [监控告警](./docs/monitoring-alerting.md)
-- [配置管理](./docs/configuration-management.md)
-- [国际化](./docs/internationalization.md)
-- [插件机制](./docs/plugin-system.md)
-- [用户权限](./docs/user-permissions.md)
-- [故障排除](./docs/troubleshooting.md)
-- [卡住诊断](./docs/stuck-diagnosis.md)
-- [超时恢复](./docs/timeout-recovery.md)
-- [卡住优化](./docs/stuck-optimization.md)
+- [核心原则](./common/core-principles.md)
+- [子智能体核心](./common/subagent-core.md)
+- [文件处理指南](./common/file-handling.md)
+- [超时恢复](./common/timeout-recovery.md)
+- [测试报告格式](./common/test-report-format.md)
+- [修正循环](./common/fix-loop.md)
+- [检查点管理](./common/checkpoint-management.md)
+- [上下文管理](./common/context-management.md)
+- [会话管理](./common/session-management.md)
+- [健康检查](./common/health-check.md)
+- [诊断命令](./common/diagnostic-commands.md)
+- [优化策略指南](./common/optimization-guide.md)

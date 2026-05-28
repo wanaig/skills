@@ -30,7 +30,14 @@
 2. **相关代码文件** — 用 Grep 找到页面/Widget 定义，然后读取 Provider、Repository、Model 等相关代码
 3. **lib/services/api_client.dart** — 了解请求封装和错误处理机制
 
-### 3. 执行审查
+### 3. 测试决策流程（测试前必过）
+
+在进行逻辑测试前，先回答以下问题：
+1. **有哪些状态管理需要验证？** — 识别Provider、ref.watch/read使用
+2. **有哪些异步操作需要测试？** — 识别AsyncValue、Future/Stream处理
+3. **数据流路径是什么？** — 识别API → Repository → Provider → Widget链路
+
+### 4. 执行审查
 
 #### 1. 状态管理
 

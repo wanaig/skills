@@ -129,6 +129,8 @@ Task(subagent_type: "fs-tester-integration", run_in_background: true, prompt: "�
 - **诊断命令**：详见 `../common/diagnostic-commands.md`
 - **自适应批次**：详见 `../common/adaptive-batch.md`
 - **并行度优化**：详见 `../common/parallel-optimization.md`
+- **知识库**：详见 `../common/knowledge-base.md`
+- **可观测性**：详见 `../common/observability.md`
 
 ---
 
