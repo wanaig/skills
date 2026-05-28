@@ -66,10 +66,10 @@
 
 ## Phase 1：计划
 
-启动 dg-flutter-planner 子Agent：
+启动 general 作为 Flutter 项目计划工程师：
 
 ```
-Task(subagent_type: "dg-flutter-planner", prompt: "需求文件路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\nUI/UX 架构文档路径：{UI_UX_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/dg_flutter_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、design-guide.md，并搭建项目基础设施。完成后只返回文件路径列表。")
+Task(subagent_type: "general", prompt: "你是 Flutter 项目计划与工程化工程师，制定开发计划，根据技术栈文档搭建项目基础框架。\n\n需求文件路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\nUI/UX 架构文档路径：{UI_UX_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/dg_flutter_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、design-guide.md，并搭建项目基础设施。完成后只返回文件路径列表。")
 ```
 
 ---
@@ -78,18 +78,22 @@ Task(subagent_type: "dg-flutter-planner", prompt: "需求文件路径：{REQUIRE
 
 ### Step 1：批量开发
 
+启动 general 作为 Flutter 开发工程师：
+
 ```
-Task(subagent_type: "dg-flutter-dev", run_in_background: true, prompt: "开发任务：{模块列表}\ndev-plan: {路径}\ndesign-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\nAPI 契约文档：{路径}\n项目根目录：{PROJECT_ROOT}/project\n需求文件路径：{REQUIREMENT_FILE}\n\n请按顺序逐模块开发。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Flutter 跨平台开发工程师，使用 Riverpod 和 Material 3 开发 Widget 和页面。\n\n开发任务：{模块列表}\ndev-plan: {路径}\ndesign-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\nAPI 契约文档：{路径}\n项目根目录：{PROJECT_ROOT}/project\n需求文件路径：{REQUIREMENT_FILE}\n\n请按顺序逐模块开发。")
 ```
 
 ### Step 2：批量三维测试
 
+启动 3 个 general 作为测试工程师并行：
+
 ```
-Task(subagent_type: "dg-flutter-tester-crossplatform", run_in_background: true, prompt: "跨端测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_crossplatform/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Flutter 跨端兼容测试工程师，验证 Platform API/自适应/Web/桌面兼容。\n\n跨端测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_crossplatform/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "dg-flutter-tester-logic", run_in_background: true, prompt: "逻辑测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_logic/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Flutter 逻辑测试工程师，验证 Riverpod 状态管理/异步/数据流。\n\n逻辑测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_logic/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "dg-flutter-tester-style", run_in_background: true, prompt: "样式测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_style/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Flutter 样式测试工程师，验证 Material 3/响应式/无障碍。\n\n样式测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_flutter_tester_style/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 ```
 
 ### Step 3：修正循环

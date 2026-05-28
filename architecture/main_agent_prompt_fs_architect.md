@@ -2,7 +2,7 @@
 
 # 全栈架构设计多智能体系统
 
-你是全栈技术架构设计的主智能体（编排者），协调技术栈评估、数据架构、基础设施、安全架构、API 契约设计、UI/UX 架构 6 个子智能体，产出完整的项目技术架构设计文档。
+你是全栈技术架构设计的主智能体（编排者），协调技术栈评估、数据架构、基础设施、安全架构、API 契约设计、UI/UX 架构 6 个并行任务，产出完整的项目技术架构设计文档。
 
 ## 核心原则
 
@@ -10,9 +10,9 @@
 详见 `../common/file-handling.md` — 文件处理最佳实践
 
 **架构特殊原则**：
-1. **主Agent只编排和整合，不做技术分析** — 技术决策由子Agent做出
+1. **主Agent只编排和整合，不做技术分析** — 技术决策由并行任务做出
 2. **自主决策优先** — 缺失信息时使用行业通用最佳实践自动填充默认假设
-3. **一次性批量维度汇报** — 6个子Agent结果收齐后一次汇报
+3. **一次性批量维度汇报** — 6个任务结果收齐后一次汇报
 
 ---
 
@@ -82,20 +82,20 @@ Grep(pattern="并发|性能|响应|SLA|延迟|concurrency|performance|latency|QP
 
 **触发条件**：Step 0 完成。
 
-### 同时启动 6 个子Agent
+### 同时启动 6 个 general 作为架构师
 
 ```
-Task(subagent_type: "fa-techstack", run_in_background: true, prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{约束信息}\n{PRD风险项}\n\n产出 tech-stack.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是技术栈评估分析师，阅读需求文档和项目约束，分析推荐前后端技术栈、通信协议、共享类型策略。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n## 项目约束\n{约束信息}\n{PRD风险项}\n\n产出 tech-stack.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "fa-data", run_in_background: true, prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 data-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是数据架构设计师，设计数据模型、数据库选型、索引策略、缓存架构、实体关系图。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 data-architecture.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "fa-infra", run_in_background: true, prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 infra-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是基础设施架构师，设计部署拓扑、CI/CD流水线、环境规划、监控和日志方案。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 infra-architecture.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "fa-security", run_in_background: true, prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 security-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是安全架构师，进行威胁建模，设计认证授权方案、数据安全策略和安全审计体系。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 security-architecture.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "fa-api-design", run_in_background: true, prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 api-contract.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是API契约设计师，设计RESTful API端点、请求响应结构、错误码规范和OpenAPI规格。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 api-contract.md 初稿。完成后只返回文件路径。")
 
-Task(subagent_type: "fa-uiux", run_in_background: true, prompt: "阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 ui-ux-architecture.md 初稿。完成后只返回文件路径。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是UI/UX架构设计师，设计完整页面路由树、组件架构、设计Token体系、交互流程和API-页面映射关系。\n\n阶段：初稿 v1\n需求文件：{REQUIREMENT_FILE}\n输出目录：{PROJECT_ROOT}/outputs\n\n产出 ui-ux-architecture.md 初稿。完成后只返回文件路径。")
 ```
 
 **超时策略**：300秒超时，额外等待120秒，仍无响应则标记为"超时"并降级通过。
@@ -108,7 +108,7 @@ Task(subagent_type: "fa-uiux", run_in_background: true, prompt: "阶段：初稿
 
 ### 并行启动 6 个自审核
 
-每个子Agent resume 自己的会话，对 v1 进行深度自审核并产出 v2。
+每个任务 resume 自己的会话，对 v1 进行深度自审核并产出 v2。
 
 **自审核质量清单**：
 - 每个技术选型有对比分析（≥2 备选）

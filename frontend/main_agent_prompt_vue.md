@@ -71,10 +71,10 @@
 
 ## Phase 1：计划
 
-启动 dg-vue-planner 子Agent：
+启动 general 作为 Vue 前端项目计划工程师：
 
 ```
-Task(subagent_type: "dg-vue-planner", prompt: "需求文件路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\nUI/UX 架构文档路径：{UI_UX_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/dg_vue_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、design-guide.md，并搭建项目基础设施。完成后只返回文件路径列表。")
+Task(subagent_type: "general", prompt: "你是 Vue 前端项目计划工程师。请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、design-guide.md，并搭建项目基础设施。\n\n需求文件路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\nUI/UX 架构文档路径：{UI_UX_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/dg_vue_planner\n\n完成后只返回文件路径列表。")
 ```
 
 ---
@@ -85,22 +85,22 @@ Task(subagent_type: "dg-vue-planner", prompt: "需求文件路径：{REQUIREMENT
 
 ### Step 1：批量开发
 
-对当前批次，启动 1 个 dg-frontend-vue-dev 子Agent：
+对当前批次，启动 1 个 general 作为 Vue 前端开发工程师：
 
 ```
-Task(subagent_type: "dg-frontend-vue-dev", run_in_background: true, prompt: "开发任务：{模块列表}\ndev-plan: {路径}\ndesign-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\nAPI 契约文档：{路径}\n项目根目录：{PROJECT_ROOT}/project\n需求文件路径：{REQUIREMENT_FILE}\n\n请按顺序逐模块开发。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Vue 前端开发工程师，使用 Composition API 和 script setup 开发组件和页面。\n\n开发任务：{模块列表}\ndev-plan: {路径}\ndesign-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\nAPI 契约文档：{路径}\n项目根目录：{PROJECT_ROOT}/project\n需求文件路径：{REQUIREMENT_FILE}\n\n请按顺序逐模块开发。")
 ```
 
 ### Step 2：批量三维测试
 
-启动 3 个测试Agent并行：
+启动 3 个 general 作为测试工程师并行：
 
 ```
-Task(subagent_type: "dg-vue-tester-component", run_in_background: true, prompt: "组件测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_component/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Vue 组件结构测试工程师，验证 Props/Emits/生命周期/组件树结构。\n\n组件测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_component/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "dg-vue-tester-logic", run_in_background: true, prompt: "逻辑测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_logic/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Vue 逻辑测试工程师，验证响应式/Store/异步/类型安全。\n\n逻辑测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_logic/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "dg-vue-tester-style", run_in_background: true, prompt: "样式测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_style/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是 Vue 样式测试工程师，验证 CSS 作用域/响应式/无障碍/交互态。\n\n样式测试：{模块列表}\n项目根目录：{PROJECT_ROOT}/project\ndesign-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/dg_vue_tester_style/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 ```
 
 ### Step 3：修正循环
@@ -202,15 +202,15 @@ Task(subagent_type: "dg-vue-tester-style", run_in_background: true, prompt: "样
 
 ```markdown
 # 计划子代理
-Task(subagent_type: "dg-vue-planner", prompt: "...")
+Task(subagent_type: "general", prompt: "你是 Vue 前端项目计划工程师。...")
 
 # 开发子代理
-Task(subagent_type: "dg-frontend-vue-dev", prompt: "...")
+Task(subagent_type: "general", prompt: "你是 Vue 前端开发工程师。...")
 
 # 测试子代理
-Task(subagent_type: "dg-vue-tester-component", prompt: "...")
-Task(subagent_type: "dg-vue-tester-logic", prompt: "...")
-Task(subagent_type: "dg-vue-tester-style", prompt: "...")
+Task(subagent_type: "general", prompt: "你是 Vue 组件结构测试工程师。...")
+Task(subagent_type: "general", prompt: "你是 Vue 逻辑测试工程师。...")
+Task(subagent_type: "general", prompt: "你是 Vue 样式测试工程师。...")
 ```
 
 ---

@@ -66,10 +66,10 @@
 
 ## Phase 1：计划
 
-启动 bc-planner 子Agent：
+启动 general 作为区块链合约项目计划工程师：
 
 ```
-Task(subagent_type: "bc-planner", prompt: "需求文档路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/bc_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、contract-design-guide.md 和项目基础框架。完成后只返回文件路径列表。")
+Task(subagent_type: "general", prompt: "你是区块链合约项目计划与工程化工程师，制定合约开发计划，根据技术栈文档搭建项目基础框架。\n\n需求文档路径：{REQUIREMENT_FILE}\n技术栈文档路径：{TECH_STACK_FILE}\n数据架构文档路径：{DATA_ARCHITECTURE_FILE}\nAPI 契约文档路径：{CONTRACT_FILE}\n安全架构文档路径：{SECURITY_FILE}\n实施路线图路径：{IMPLEMENTATION_ROADMAP_FILE}\n代码输出目录：{PROJECT_ROOT}/project\n计划输出目录：{PROJECT_ROOT}/outputs/bc_planner\n\n请阅读需求文档、架构文档及实施路线图，产出 dev-plan.md、contract-design-guide.md 和项目基础框架。完成后只返回文件路径列表。")
 ```
 
 ---
@@ -80,18 +80,22 @@ Task(subagent_type: "bc-planner", prompt: "需求文档路径：{REQUIREMENT_FIL
 
 ### Step 1：批量开发
 
+启动 general 作为 Solidity 智能合约开发工程师：
+
 ```
-Task(subagent_type: "bc-solidity-dev", run_in_background: true, prompt: "开发任务：{合约列表}\ndev-plan: {路径}\ncontract-design-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个合约开发。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是智能合约开发工程师，根据技术栈文档和合约设计指南编写合约，包含事件、权限、注释。\n\n开发任务：{合约列表}\ndev-plan: {路径}\ncontract-design-guide: {路径}\ntech-stack: {路径}\nlessons-learned: {路径}\n项目根目录: {PROJECT_ROOT}/project\n需求文档路径：{REQUIREMENT_FILE}\n\n请按顺序逐个合约开发。")
 ```
 
 ### Step 2：批量三维测试
 
+启动 3 个 general 作为测试工程师并行：
+
 ```
-Task(subagent_type: "bc-tester-functional", run_in_background: true, prompt: "功能测试：{合约列表}\n待测项目：{PROJECT_ROOT}/project\ncontract-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/bc_tester_functional/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是区块链功能测试工程师，验证合约业务逻辑/状态转移/事件完整性。\n\n功能测试：{合约列表}\n待测项目：{PROJECT_ROOT}/project\ncontract-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/bc_tester_functional/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "bc-tester-security", run_in_background: true, prompt: "安全测试：{合约列表}\n待测项目：{PROJECT_ROOT}/project\ncontract-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/bc_tester_security/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是区块链安全测试工程师，检测重入/溢出/权限/tx.origin/签名漏洞。\n\n安全测试：{合约列表}\n待测项目：{PROJECT_ROOT}/project\ncontract-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/bc_tester_security/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 
-Task(subagent_type: "bc-tester-gas", run_in_background: true, prompt: "燃耗测试：{合约列表}\n待测项目：{PROJECT_ROOT}/project\ncontract-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/bc_tester_gas/\n\n测试报告同时输出 markdown 和 JSON 格式。")
+Task(subagent_type: "general", run_in_background: true, prompt: "你是区块链燃耗测试工程师，优化存储布局/循环/数据类型，降低 Gas 消耗。\n\n燃耗测试：{合约列表}\n待测项目：{PROJECT_ROOT}/project\ncontract-design-guide: {路径}\n输出目录: {PROJECT_ROOT}/outputs/bc_tester_gas/\n\n测试报告同时输出 markdown 和 JSON 格式。")
 ```
 
 ### Step 3：修正循环
